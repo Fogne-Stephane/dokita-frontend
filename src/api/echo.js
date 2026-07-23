@@ -4,7 +4,7 @@ import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
 const makeEcho = () => {
-    const token = localStorage.getItem('dokita_token');
+    const token = sessionStorage.getItem('dokita_token');
     return new Echo({
         broadcaster: 'reverb',
         key: 'dokita-key',

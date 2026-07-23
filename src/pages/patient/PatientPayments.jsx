@@ -1,235 +1,168 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Receipt, Download, ChevronRight, CreditCard } from 'lucide-react';
+import api from '../../api/axios';
 
-const MOCK_PENDING = [
-    { id: 1, doctor: 'Dr. Kamga Pierre', spec: 'Cardiologue', date: '10 Jun 2026', amount: 15000, appointmentId: 1 },
-    { id: 2, doctor: 'Dr. Mballa Sophie', spec: 'Pédiatre',   date: '15 Jun 2026', amount: 12000, appointmentId: 2 },
-];
-
-const MOCK_HISTORY = [
-    { id: 1, doctor: 'Dr. Fongang Luc', amount: '10 000 XAF', method: 'mtn_momo',     status: 'completed', date: '02 Jun 2026' },
-    { id: 2, doctor: 'Dr. Kamga Pierre', amount: '15 000 XAF', method: 'orange_money', status: 'completed', date: '15 Mai 2026' },
-    { id: 3, doctor: 'Dr. Nkeng Paul',   amount: '20 000 XAF', method: 'mtn_momo',     status: 'failed',    date: '01 Mai 2026' },
-];
-
-const STATUS_CONFIG = {
-    completed: { label: 'Payé',      bg: '#dcfce7', color: '#16a34a' },
-    pending:   { label: 'En cours',  bg: '#fef9c3', color: '#ca8a04' },
-    failed:    { label: 'Échoué',    bg: '#fee2e2', color: '#dc2626' },
+const DS = {
+  primary:'#016472', secondary:'#E8613A', bg:'#f9f9ff',
+  surface:'#ffffff', surfaceLow:'#f0f3ff', surfaceContainer:'#e7eeff',
+  onSurface:'#111c2d', onSurfaceVariant:'#3f484b', outline:'#6f797b',
+  outlineVariant:'#bec8cb',
 };
 
-const METHOD_CONFIG = {
-    mtn_momo:     { label: 'MTN MoMo',     icon: '🟡', color: '#ca8a04' },
-    orange_money: { label: 'Orange Money', icon: '🟠', color: '#ea580c' },
+const STATUS = {
+  completed: { label:'Payé',      bg:'#e1f5ee', color:'#016472' },
+  pending:   { label:'En cours',  bg:'#fff8e7', color:'#884b00' },
+  failed:    { label:'Échoué',    bg:'#ffdad6', color:'#ba1a1a' },
 };
 
-const PatientPayments = () => {
-    const [showModal, setShowModal]   = useState(false);
-    const [selected, setSelected]     = useState(null);
-    const [method, setMethod]         = useState('mtn_momo');
-    const [phone, setPhone]           = useState('');
-    const [loading, setLoading]       = useState(false);
-    const [success, setSuccess]       = useState(false);
-    const [activeTab, setActiveTab]   = useState('pending');
+const METHOD = {
+  mtn_momo:     { label:'MTN MoMo',     icon:'🟡' },
+  orange_money: { label:'Orange Money', icon:'🟠' },
+};
 
-    const openModal = (rdv) => {
-        setSelected(rdv);
-        setSuccess(false);
-        setShowModal(true);
-    };
+export default function PatientPayments() {
+  const navigate = useNavigate();
+  const [payments, setPayments]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [selected, setSelected]     = useState(null);
 
-    const handlePay = async () => {
-        if (!phone.trim()) return;
-        setLoading(true);
-        // Simulation — en production, appeler l'API réelle
-        await new Promise(r => setTimeout(r, 2000));
-        setLoading(false);
-        setSuccess(true);
-    };
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get('/patient/payments/history');
+        setPayments(res.data);
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
+  }, []);
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontFamily: "'Inter', sans-serif" }}>
+  const total = payments
+    .filter(p => p.status === 'completed')
+    .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
-            {/* Header */}
-            <div>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#111c2d' }}>Paiements</h2>
-                <p style={{ margin: 0, fontSize: 13, color: '#6f797b' }}>Gérez vos paiements de consultations</p>
-            </div>
+  if (loading) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:300, fontFamily:'Inter,sans-serif' }}>
+      <p style={{ color: DS.outline }}>Chargement...</p>
+    </div>
+  );
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: 8, background: 'white', padding: 6, borderRadius: 14, border: '1px solid #e7eeff', width: 'fit-content' }}>
-                {[
-                    { key: 'pending', label: '⏳ À payer' },
-                    { key: 'history', label: '📋 Historique' },
-                ].map(t => (
-                    <button key={t.key} onClick={() => setActiveTab(t.key)}
-                        style={{ padding: '8px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, background: activeTab === t.key ? '#016472' : 'transparent', color: activeTab === t.key ? 'white' : '#6f797b', transition: 'all 0.2s' }}>
-                        {t.label}
-                    </button>
-                ))}
-            </div>
+  return (
+    <div style={{ fontFamily:'Inter,sans-serif' }}>
 
-            {/* À payer */}
-            {activeTab === 'pending' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {MOCK_PENDING.map(rdv => (
-                        <div key={rdv.id} style={{ background: 'white', borderRadius: 16, padding: '20px 24px', border: '1px solid #e7eeff', display: 'flex', alignItems: 'center', gap: 18 }}>
-                            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg, #016472, #2e7d8c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>👨‍⚕️</div>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 15, color: '#111c2d' }}>{rdv.doctor}</p>
-                                <p style={{ margin: 0, fontSize: 13, color: '#6f797b' }}>{rdv.spec} • {rdv.date}</p>
-                            </div>
-                            <div style={{ textAlign: 'right', marginRight: 16 }}>
-                                <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#016472' }}>{rdv.amount.toLocaleString()} XAF</p>
-                                <p style={{ margin: 0, fontSize: 12, color: '#6f797b' }}>Consultation vidéo</p>
-                            </div>
-                            <button onClick={() => openModal(rdv)}
-                                style={{ background: 'linear-gradient(90deg, #E8613A, #E8913A)', color: 'white', border: 'none', borderRadius: 12, padding: '12px 22px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(232,97,58,0.3)', whiteSpace: 'nowrap' }}>
-                                💳 Payer maintenant
-                            </button>
-                        </div>
-                    ))}
-                    {MOCK_PENDING.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: 48, background: 'white', borderRadius: 16, border: '1px solid #e7eeff' }}>
-                            <p style={{ fontSize: 40, margin: '0 0 12px' }}>✅</p>
-                            <p style={{ color: '#6f797b', fontWeight: 600 }}>Aucun paiement en attente</p>
-                        </div>
-                    )}
-                </div>
-            )}
+      {/* Header */}
+      <div style={{ marginBottom:24 }}>
+        <h1 style={{ fontSize:24, fontWeight:700, color: DS.onSurface, margin:'0 0 4px', letterSpacing:'-0.02em' }}>
+          Paiements & Reçus
+        </h1>
+        <p style={{ fontSize:14, color: DS.outline, margin:0 }}>Historique de vos transactions</p>
+      </div>
 
-            {/* Historique */}
-            {activeTab === 'history' && (
-                <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e7eeff', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ background: '#f9f9ff', borderBottom: '1px solid #e7eeff' }}>
-                                {['Médecin', 'Montant', 'Méthode', 'Date', 'Statut'].map(h => (
-                                    <th key={h} style={{ padding: '13px 18px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#6f797b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {MOCK_HISTORY.map((p, i) => {
-                                const st = STATUS_CONFIG[p.status];
-                                const mt = METHOD_CONFIG[p.method];
-                                return (
-                                    <tr key={p.id} style={{ borderBottom: i < MOCK_HISTORY.length - 1 ? '1px solid #f0f3ff' : 'none' }}>
-                                        <td style={{ padding: '14px 18px', fontWeight: 600, fontSize: 14, color: '#111c2d' }}>{p.doctor}</td>
-                                        <td style={{ padding: '14px 18px', fontWeight: 700, fontSize: 14, color: '#016472' }}>{p.amount}</td>
-                                        <td style={{ padding: '14px 18px', fontSize: 13 }}>
-                                            <span style={{ color: mt.color, fontWeight: 600 }}>{mt.icon} {mt.label}</span>
-                                        </td>
-                                        <td style={{ padding: '14px 18px', fontSize: 13, color: '#6f797b' }}>{p.date}</td>
-                                        <td style={{ padding: '14px 18px' }}>
-                                            <span style={{ background: st.bg, color: st.color, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>{st.label}</span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+      {/* Stats */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:24 }}>
+        {[
+          { label:'Total dépensé',     value: total.toLocaleString() + ' XAF', icon:'💰', color:'#016472' },
+          { label:'Consultations',     value: payments.filter(p=>p.status==='completed').length, icon:'✅', color:'#016472' },
+          { label:'En attente',        value: payments.filter(p=>p.status==='pending').length,   icon:'⏳', color:'#884b00' },
+        ].map((s,i) => (
+          <div key={i} style={{ background: DS.surface, borderRadius:12, padding:'16px', border:`1px solid ${DS.outlineVariant}` }}>
+            <p style={{ fontSize:22, margin:'0 0 4px' }}>{s.icon}</p>
+            <p style={{ fontSize:20, fontWeight:700, color: s.color, margin:'0 0 2px' }}>{s.value}</p>
+            <p style={{ fontSize:12, color: DS.outline, margin:0 }}>{s.label}</p>
+          </div>
+        ))}
+      </div>
 
-            {/* Modal de paiement */}
-            {showModal && selected && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-                    onClick={() => !loading && setShowModal(false)}>
-                    <div style={{ background: 'white', borderRadius: 24, padding: 36, width: '100%', maxWidth: 460, position: 'relative' }}
-                        onClick={e => e.stopPropagation()}>
-
-                        {!success ? (
-                            <>
-                                <h3 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#111c2d' }}>
-                                    💳 Paiement DOKITA
-                                </h3>
-                                <p style={{ margin: '0 0 24px', fontSize: 13, color: '#6f797b' }}>
-                                    Choisissez votre méthode de paiement Mobile Money
-                                </p>
-
-                                {/* Récap RDV */}
-                                <div style={{ background: '#f0f3ff', borderRadius: 14, padding: 16, marginBottom: 24 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 14, color: '#111c2d' }}>{selected.doctor}</p>
-                                            <p style={{ margin: 0, fontSize: 13, color: '#6f797b' }}>{selected.spec} • {selected.date}</p>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#016472' }}>
-                                            {selected.amount.toLocaleString()} XAF
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Choix méthode */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-                                    {[
-                                        { key: 'mtn_momo',     label: 'MTN MoMo',     icon: '🟡', desc: 'Mobile Money MTN' },
-                                        { key: 'orange_money', label: 'Orange Money', icon: '🟠', desc: 'Paiement Orange' },
-                                    ].map(m => (
-                                        <button key={m.key} onClick={() => setMethod(m.key)}
-                                            style={{ padding: '16px 12px', borderRadius: 14, border: `2px solid ${method === m.key ? '#016472' : '#e7eeff'}`, background: method === m.key ? '#e7eeff' : 'white', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', textAlign: 'center' }}>
-                                            <p style={{ margin: '0 0 4px', fontSize: 28 }}>{m.icon}</p>
-                                            <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 14, color: '#111c2d' }}>{m.label}</p>
-                                            <p style={{ margin: 0, fontSize: 11, color: '#6f797b' }}>{m.desc}</p>
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* Numéro de téléphone */}
-                                <div style={{ marginBottom: 24 }}>
-                                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#111c2d', marginBottom: 6 }}>
-                                        Numéro {method === 'mtn_momo' ? 'MTN' : 'Orange'} à débiter
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        value={phone}
-                                        onChange={e => setPhone(e.target.value)}
-                                        placeholder={method === 'mtn_momo' ? '+237 67X XXX XXX' : '+237 69X XXX XXX'}
-                                        style={{ width: '100%', border: '1.5px solid #dde3f0', borderRadius: 12, padding: '13px 16px', fontSize: 15, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-                                    />
-                                    <p style={{ margin: '6px 0 0', fontSize: 12, color: '#6f797b' }}>
-                                        💡 Vous recevrez une notification USSD sur ce numéro pour confirmer
-                                    </p>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: 12 }}>
-                                    <button onClick={() => setShowModal(false)} disabled={loading}
-                                        style={{ flex: 1, padding: '13px', border: '1.5px solid #dde3f0', borderRadius: 12, background: 'white', color: '#3f484b', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                        Annuler
-                                    </button>
-                                    <button onClick={handlePay} disabled={loading || !phone.trim()}
-                                        style={{ flex: 2, padding: '13px', border: 'none', borderRadius: 12, background: loading ? '#9ca3af' : 'linear-gradient(90deg, #E8613A, #E8913A)', color: 'white', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
-                                        {loading ? '⏳ Traitement en cours...' : `Payer ${selected.amount.toLocaleString()} XAF`}
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            /* Succès */
-                            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                                <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, margin: '0 auto 20px' }}>
-                                    ✅
-                                </div>
-                                <h3 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800, color: '#111c2d' }}>
-                                    Demande envoyée !
-                                </h3>
-                                <p style={{ margin: '0 0 6px', fontSize: 14, color: '#6f797b' }}>
-                                    Une notification USSD a été envoyée au
-                                </p>
-                                <p style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: '#016472' }}>{phone}</p>
-                                <div style={{ background: '#fef9c3', borderRadius: 12, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#854d0e' }}>
-                                    ⚠️ Confirmez le paiement sur votre téléphone dans les <strong>2 minutes</strong>
-                                </div>
-                                <button onClick={() => setShowModal(false)}
-                                    style={{ width: '100%', padding: '13px', border: 'none', borderRadius: 12, background: '#016472', color: 'white', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
-                                    Fermer
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+      {/* Liste des reçus */}
+      {payments.length === 0 ? (
+        <div style={{ textAlign:'center', padding:48, background: DS.surface, borderRadius:12, border:`1px solid ${DS.outlineVariant}` }}>
+          <Receipt size={40} color={DS.outlineVariant} style={{ margin:'0 auto 12px' }} />
+          <p style={{ color: DS.outline, fontWeight:600, margin:'0 0 8px' }}>Aucun paiement effectué</p>
+          <p style={{ color: DS.outline, fontSize:14, margin:'0 0 20px' }}>Vos reçus apparaîtront ici après votre première consultation</p>
+          <button onClick={() => navigate('/patient/doctors')}
+            style={{ padding:'10px 22px', background:'linear-gradient(90deg,#E8613A,#E8913A)', color:'#fff', border:'none', borderRadius:8, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+            Trouver un médecin
+          </button>
         </div>
-    );
-};
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {payments.map(p => {
+            const st = STATUS[p.status] || STATUS.pending;
+            const mt = METHOD[p.method] || { label: p.method, icon:'💳' };
+            const isOpen = selected === p.id;
+            return (
+              <div key={p.id} style={{ background: DS.surface, borderRadius:12, border:`1px solid ${isOpen ? DS.primary : DS.outlineVariant}`, overflow:'hidden', transition:'border-color .2s' }}>
+                {/* Row principal */}
+                <div onClick={() => setSelected(isOpen ? null : p.id)}
+                  style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 20px', cursor:'pointer' }}>
+                  {/* Icône */}
+                  <div style={{ width:44, height:44, borderRadius:12, background: DS.surfaceContainer, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>
+                    <Receipt size={22} color={DS.primary} />
+                  </div>
+                  {/* Infos */}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <p style={{ margin:'0 0 3px', fontWeight:600, fontSize:14, color: DS.onSurface }}>
+                      Consultation — {p.doctor || 'Médecin'}
+                    </p>
+                    <p style={{ margin:0, fontSize:12, color: DS.outline }}>
+                      {mt.icon} {mt.label} · {p.date}
+                    </p>
+                  </div>
+                  {/* Montant */}
+                  <div style={{ textAlign:'right', flexShrink:0 }}>
+                    <p style={{ margin:'0 0 4px', fontWeight:700, fontSize:15, color: DS.onSurface }}>{p.amount}</p>
+                    <span style={{ background: st.bg, color: st.color, padding:'3px 10px', borderRadius:999, fontSize:11, fontWeight:600 }}>{st.label}</span>
+                  </div>
+                  <ChevronRight size={16} color={DS.outline} style={{ flexShrink:0, transform: isOpen ? 'rotate(90deg)' : 'none', transition:'transform .2s' }} />
+                </div>
 
-export default PatientPayments;
+                {/* Détail dépliable */}
+                {isOpen && (
+                  <div style={{ padding:'0 20px 20px', borderTop:`1px solid ${DS.outlineVariant}`, paddingTop:16 }}>
+                    <div style={{ background: DS.surfaceLow, borderRadius:10, padding:14, marginBottom:14 }}>
+                      {[
+                        { label:'Référence',         value: p.transaction_id || 'DOK-' + p.id },
+                        { label:'Méthode',           value: mt.icon + ' ' + mt.label },
+                        { label:'Montant',           value: p.amount },
+                        { label:'Date',              value: p.date },
+                        { label:'Médecin',           value: p.doctor || 'Médecin' },
+                        { label:'Statut',            value: st.label },
+                      ].map((item, i) => (
+                        <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom: i < 5 ? `1px solid ${DS.outlineVariant}` : 'none' }}>
+                          <span style={{ fontSize:13, color: DS.outline }}>{item.label}</span>
+                          <span style={{ fontSize:13, fontWeight:600, color: DS.onSurface }}>{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {p.status === 'completed' && (
+                      <button style={{ width:'100%', padding:'11px', background: DS.primary, color:'#fff', border:'none', borderRadius:8, fontWeight:600, cursor:'pointer', fontFamily:'inherit', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                        <Download size={16} /> Télécharger le reçu PDF
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Bouton nouveau paiement */}
+      <div style={{ marginTop:24, padding:20, background: DS.surface, borderRadius:12, border:`1px solid ${DS.outlineVariant}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:44, height:44, borderRadius:12, background:'linear-gradient(135deg,#E8613A,#E8913A)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <CreditCard size={22} color="#fff" />
+          </div>
+          <div>
+            <p style={{ margin:0, fontWeight:600, fontSize:14, color: DS.onSurface }}>Nouvelle consultation</p>
+            <p style={{ margin:0, fontSize:12, color: DS.outline }}>Trouvez un médecin et payez en ligne</p>
+          </div>
+        </div>
+        <button onClick={() => navigate('/patient/doctors')}
+          style={{ padding:'10px 18px', background:'linear-gradient(90deg,#E8613A,#E8913A)', color:'#fff', border:'none', borderRadius:8, fontWeight:600, cursor:'pointer', fontFamily:'inherit', fontSize:13 }}>
+          Consulter →
+        </button>
+      </div>
+    </div>
+  );
+}

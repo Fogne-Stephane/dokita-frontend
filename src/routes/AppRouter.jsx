@@ -4,6 +4,8 @@ import { useSelector } from 'react-redux';
 import Landing from '../pages/Landing';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
+import ForgotPassword from '../pages/auth/ForgotPassword';
+import ResetPassword from '../pages/auth/ResetPassword';
 
 // Patient
 import PatientLayout from '../components/layout/PatientLayout';
@@ -15,7 +17,9 @@ import PatientPrescriptions from '../pages/patient/PatientPrescriptions';
 import PatientMessages from '../pages/patient/PatientMessages';
 import PatientProfile from '../pages/patient/PatientProfile';
 import PatientPayments from '../pages/patient/PatientPayments';
-
+import PaymentTunnel from '../pages/patient/PaymentTunnel';
+import WaitingRoom from '../pages/patient/WaitingRoom';
+import DoctorProfile from '../pages/patient/DoctorProfile';
 // Doctor
 import DoctorLayout from '../components/layout/DoctorLayout';
 import DoctorHome from '../pages/doctor/DoctorHome';
@@ -23,16 +27,20 @@ import DoctorAgenda from '../pages/doctor/DoctorAgenda';
 import DoctorPatients from '../pages/doctor/DoctorPatients';
 import DoctorPrescriptions from '../pages/doctor/DoctorPrescriptions';
 import DoctorMessages from '../pages/doctor/DoctorMessages';
-import DoctorProfile from '../pages/doctor/DoctorProfile';
+import DoctorProfile2 from '../pages/doctor/DoctorProfile';
+
 
 // Admin
 import AdminLayout from '../components/layout/AdminLayout';
 import AdminHome from '../pages/admin/AdminHome';
 import AdminUsers from '../pages/admin/AdminUsers';
 import AdminDoctors from '../pages/admin/AdminDoctors';
+
 import AdminHealthCenters from '../pages/admin/AdminHealthCenters';
 import AdminPayments from '../pages/admin/AdminPayments';
 import AdminSettings from '../pages/admin/AdminSettings';
+
+
 
 const PrivateRoute = ({ children }) => {
     const { token } = useSelector((state) => state.auth);
@@ -45,6 +53,9 @@ const AppRouter = () => (
             <Route path="/"         element={<Landing />} />
             <Route path="/login"    element={<Login />} />
             <Route path="/register" element={<Register />} />
+            {/* Dans les Routes publiques */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password"  element={<ResetPassword />} />
 
             {/* Patient */}
             <Route path="/patient/dashboard"      element={<PrivateRoute><PatientLayout><PatientHome /></PatientLayout></PrivateRoute>} />
@@ -54,6 +65,13 @@ const AppRouter = () => (
             <Route path="/patient/prescriptions"  element={<PrivateRoute><PatientLayout><PatientPrescriptions /></PatientLayout></PrivateRoute>} />
             <Route path="/patient/messages"       element={<PrivateRoute><PatientLayout><PatientMessages /></PatientLayout></PrivateRoute>} />
             <Route path="/patient/profile"        element={<PrivateRoute><PatientLayout><PatientProfile /></PatientLayout></PrivateRoute>} />
+            <Route path="/patient/pay/:appointmentId" element={
+    <PrivateRoute>
+        <PatientLayout><PaymentTunnel /></PatientLayout>
+    </PrivateRoute>
+} />
+            <Route path="/patient/doctors/:id" element={<PrivateRoute><PatientLayout><DoctorProfile /></PatientLayout></PrivateRoute>
+} />
             <Route path="/patient/payments" element={
     <PrivateRoute><PatientLayout><PatientPayments /></PatientLayout></PrivateRoute>
 } />

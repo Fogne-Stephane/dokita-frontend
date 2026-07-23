@@ -6,6 +6,17 @@ import { getEcho } from '../../api/echo';
 
 const DoctorMessages = () => {
     const { user } = useSelector((state) => state.auth);
+
+        // Sécurité — ne rien faire si l'utilisateur n'est pas médecin
+    if (!user || user.role !== 'doctor') {
+        return (
+            <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter', sans-serif" }}>
+                <p style={{ color: '#dc2626', fontWeight: 600 }}>
+                    ⚠️ Accès non autorisé. Vous devez être connecté en tant que médecin.
+                </p>
+            </div>
+        );
+    }
     const [conversations, setConversations] = useState([]);
     const [activeConv, setActiveConv] = useState(null);
     const [messages, setMessages] = useState([]);

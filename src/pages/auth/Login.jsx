@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { loginUser, clearError } from '../../redux/slices/authSlice';
 import logo from '../../assets/logo.png';
-
 const EyeIcon = ({ show, onClick }) => (
     <button type="button" onClick={onClick} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6f797b', padding: 0, display: 'flex' }}>
         {show ? (
@@ -24,6 +23,8 @@ const EyeIcon = ({ show, onClick }) => (
 const Login = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const timedOut = searchParams.get('reason') === 'timeout';
     const { loading, error } = useSelector((state) => state.auth);
     const [form, setForm] = useState({ email: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
@@ -71,11 +72,16 @@ const Login = () => {
             </div>
 
             {/* Panneau droit */}
+
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9f9ff', padding: 32 }}>
                 <div style={{ width: '100%', maxWidth: 420 }}>
                     <h2 style={{ fontSize: 26, fontWeight: 800, color: '#111c2d', margin: '0 0 6px', letterSpacing: '-0.01em' }}>Connexion</h2>
                     <p style={{ color: '#3f484b', fontSize: 14, marginBottom: 32 }}>Connectez-vous à votre espace Dokita</p>
-
+                        {timedOut && (
+    <div style={{ background:'#fff8e7', border:'1px solid #f59e0b', color:'#884b00', borderRadius:8, padding:'12px 16px', marginBottom:20, fontSize:14, display:'flex', alignItems:'center', gap:8 }}>
+        ⏰ Votre session a expiré après 30 minutes d'inactivité.
+    </div>
+)}
                     {error && (
                         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 12, padding: '12px 16px', marginBottom: 24, fontSize: 14 }}>
                             ⚠️ {error}
@@ -95,7 +101,9 @@ const Login = () => {
                             </div>
                         </div>
                         <div style={{ textAlign: 'right', marginBottom: 28 }}>
-                            <a href="#" style={{ fontSize: 13, color: '#016472', fontWeight: 600, textDecoration: 'none' }}>Mot de passe oublié ?</a>
+                        <Link to="/forgot-password" style={{ fontSize: 13, color: '#016472', fontWeight: 600, textDecoration: 'none' }}>
+    Mot de passe oublié ?
+</Link>
                         </div>
                         <button type="submit" disabled={loading} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg, #016472 0%, #004e5a 100%)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'transform 0.15s', fontFamily: 'inherit' }}
                             onMouseEnter={e => !loading && (e.target.style.transform = 'scale(1.01)')}

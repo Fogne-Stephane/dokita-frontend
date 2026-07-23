@@ -1,145 +1,178 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { clearAuth } from '../../redux/slices/authSlice';
+import { useSessionTimeout } from '../../hooks/useSessionTimeout';
+import LogoutModal from '../ui/LogoutModal';
+import BottomNav from './BottomNav';
 import logo from '../../assets/logo.png';
-import { logoutUser } from '../../redux/slices/authSlice';
-
-const handleLogout = async () => {
-    await dispatch(logoutUser());
-    navigate('/login');
-};
+import {
+  Home, Calendar, Users, Stethoscope, FileText,
+  Pill, MessageSquare, User, CreditCard, ChevronLeft,
+  ChevronRight, Bell, LogOut
+} from 'lucide-react';
 
 const NAV_ITEMS = [
-    { path: '/patient/dashboard',        icon: '🏠', label: 'Accueil' },
-    { path: '/patient/appointments',     icon: '📅', label: 'Rendez-vous' },
-    { path: '/patient/doctors',          icon: '👨‍⚕️', label: 'Médecins' },
-    { path: '/patient/medical-record',   icon: '🗂️', label: 'Dossier médical' },
-    { path: '/patient/prescriptions',    icon: '💊', label: 'Prescriptions' },
-    { path: '/patient/messages',         icon: '💬', label: 'Messages' },
-    { path: '/patient/payments',         icon: '💳', label: 'Paiements' },
-    { path: '/patient/profile',          icon: '👤', label: 'Mon profil' },
+  { path:'/patient/dashboard',      icon: Home,         label:'Accueil' },
+  { path:'/patient/appointments',   icon: Calendar,     label:'Rendez-vous' },
+  { path:'/patient/doctors',        icon: Stethoscope,  label:'Médecins' },
+  { path:'/patient/medical-record', icon: FileText,     label:'Dossier médical' },
+  { path:'/patient/prescriptions',  icon: Pill,         label:'Prescriptions' },
+  { path:'/patient/messages',       icon: MessageSquare,label:'Messages' },
+  { path:'/patient/payments',       icon: CreditCard,   label:'Paiements' },
+  { path:'/patient/profile',        icon: User,         label:'Mon profil' },
 ];
 
-const PatientLayout = ({ children }) => {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.auth);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+export default function PatientLayout({ children }) {
+  const location   = useLocation();
+  const navigate   = useNavigate();
+  const dispatch   = useDispatch();
+  const { user }   = useSelector(s => s.auth);
+  const [open, setOpen]           = useState(true);
+  const [showLogout, setShowLogout] = useState(false);
 
-    const handleLogout = async () => {
-        await dispatch(logoutUser());
-        navigate('/login');
-    };
+  useSessionTimeout();
 
-    return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f3ff', fontFamily: "'Inter', sans-serif" }}>
+  const handleLogout = () => {
+    dispatch(clearAuth());
+    navigate('/login');
+  };
 
-            {/* ── SIDEBAR ── */}
-            <aside style={{
-                width: sidebarOpen ? 240 : 70, flexShrink: 0,
-                background: 'linear-gradient(180deg, #016472 0%, #004e5a 100%)',
-                display: 'flex', flexDirection: 'column',
-                transition: 'width 0.3s ease', overflow: 'hidden',
-                position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 40,
-            }}>
-                {/* Logo */}
-                <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: sidebarOpen ? 'space-between' : 'center' }}>
-{sidebarOpen && (
-    <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
-        <img src={logo} alt="Dokita" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-    </div>
-)}
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: 'white', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {sidebarOpen ? '←' : '→'}
-                    </button>
-                </div>
+  const currentLabel = NAV_ITEMS.find(n => n.path === location.pathname)?.label || 'Dashboard';
 
-                {/* Navigation */}
-                <nav style={{ flex: 1, padding: '16px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {NAV_ITEMS.map((item) => {
-                        const active = location.pathname === item.path;
-                        return (
-                            <Link key={item.path} to={item.path} style={{
-                                display: 'flex', alignItems: 'center', gap: 12,
-                                padding: '11px 12px', borderRadius: 12, textDecoration: 'none',
-                                background: active ? 'rgba(255,255,255,0.18)' : 'transparent',
-                                color: active ? 'white' : 'rgba(255,255,255,0.7)',
-                                fontWeight: active ? 600 : 400, fontSize: 14,
-                                transition: 'all 0.2s', whiteSpace: 'nowrap',
-                                borderLeft: active ? '3px solid #E8613A' : '3px solid transparent',
-                            }}
-                                onMouseEnter={e => !active && (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
-                                onMouseLeave={e => !active && (e.currentTarget.style.background = 'transparent')}
-                            >
-                                <span style={{ fontSize: 20, flexShrink: 0 }}>{item.icon}</span>
-                                {sidebarOpen && <span>{item.label}</span>}
-                            </Link>
-                        );
-                    })}
-                </nav>
+  return (
+    <div style={{ display:'flex', minHeight:'100vh', background:'var(--background)', fontFamily:"'Inter',sans-serif" }}>
 
-                {/* Déconnexion */}
-                <div style={{ padding: '16px 10px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <button onClick={handleLogout} style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '11px 12px', borderRadius: 12, border: 'none',
-                        background: 'rgba(232,97,58,0.2)', color: '#ffb5a0',
-                        cursor: 'pointer', fontSize: 14, fontFamily: 'inherit',
-                        transition: 'background 0.2s', whiteSpace: 'nowrap',
-                    }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,97,58,0.35)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(232,97,58,0.2)'}
-                    >
-                        <span style={{ fontSize: 20, flexShrink: 0 }}>🚪</span>
-                        {sidebarOpen && <span>Déconnexion</span>}
-                    </button>
-                </div>
-            </aside>
+      {/* ── SIDEBAR ── */}
+      <aside className="sidebar" style={{
+        width: open ? 248 : 68, flexShrink:0,
+        background:'var(--surface)',
+        borderRight:'1px solid var(--outline-variant)',
+        display:'flex', flexDirection:'column',
+        transition:'width 0.25s ease',
+        position:'fixed', top:0, left:0, height:'100vh', zIndex:40,
+        overflow:'hidden',
+      }}>
 
-            {/* ── CONTENU PRINCIPAL ── */}
-            <div style={{ flex: 1, marginLeft: sidebarOpen ? 240 : 70, transition: 'margin-left 0.3s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-
-                {/* Header */}
-                <header style={{
-                    position: 'sticky', top: 0, zIndex: 30,
-                    background: 'white', borderBottom: '1px solid #e7eeff',
-                    padding: '0 28px', height: 64,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
-                }}>
-                    <div>
-                        <p style={{ fontSize: 11, color: '#6f797b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Espace Patient</p>
-                        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#016472', margin: 0 }}>
-                            {NAV_ITEMS.find(n => n.path === location.pathname)?.label || 'Dashboard'}
-                        </h1>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        {/* Notification */}
-                        <button style={{ position: 'relative', background: '#f0f3ff', border: 'none', borderRadius: 12, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 20 }}>
-                            🔔
-                            <span style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, background: '#E8613A', borderRadius: '50%', border: '2px solid white' }} />
-                        </button>
-                        {/* Avatar */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f0f3ff', padding: '6px 14px 6px 6px', borderRadius: 12 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #016472, #2e7d8c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
-                                {user?.name?.[0]?.toUpperCase() || 'P'}
-                            </div>
-                            <div>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#111c2d' }}>{user?.name || 'Patient'}</p>
-                                <p style={{ margin: 0, fontSize: 11, color: '#6f797b' }}>Patient</p>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                {/* Page content */}
-                <main style={{ flex: 1, padding: 28 }}>
-                    {children}
-                </main>
-            </div>
+        {/* Logo + toggle */}
+        <div style={{ height:64, display:'flex', alignItems:'center', justifyContent: open ? 'space-between' : 'center', padding: open ? '0 16px' : '0 12px', borderBottom:'1px solid var(--outline-variant)', flexShrink:0 }}>
+          {open && (
+            <Link to="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
+              <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden', flexShrink:0 }}>
+                <img src={logo} alt="Dokita" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+              </div>
+              <span style={{ fontSize:18, fontWeight:700, color:'var(--primary)', letterSpacing:'-0.01em' }}>Dokita</span>
+            </Link>
+          )}
+          <button onClick={() => setOpen(!open)}
+            style={{ width:32, height:32, borderRadius:8, border:'1px solid var(--outline-variant)', background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--outline)', flexShrink:0 }}>
+            {open ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          </button>
         </div>
-    );
-};
 
-export default PatientLayout;
+        {/* Nav items */}
+        <nav style={{ flex:1, padding:'12px 8px', display:'flex', flexDirection:'column', gap:2, overflowY:'auto' }}>
+          {NAV_ITEMS.map(item => {
+            const active = location.pathname === item.path;
+            const Icon   = item.icon;
+            return (
+              <Link key={item.path} to={item.path}
+                style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  padding: open ? '10px 12px' : '10px', justifyContent: open ? 'flex-start' : 'center',
+                  borderRadius:8, textDecoration:'none',
+                  background: active ? 'var(--surface-container)' : 'transparent',
+                  color: active ? 'var(--primary)' : 'var(--on-surface-variant)',
+                  fontWeight: active ? 600 : 400,
+                  fontSize:14, transition:'all 0.15s',
+                  whiteSpace:'nowrap',
+                }}
+                onMouseEnter={e => !active && (e.currentTarget.style.background = 'var(--surface-low)')}
+                onMouseLeave={e => !active && (e.currentTarget.style.background = 'transparent')}
+                title={!open ? item.label : ''}>
+                <Icon size={20} style={{ flexShrink:0 }} />
+                {open && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User + logout */}
+        <div style={{ padding:'12px 8px', borderTop:'1px solid var(--outline-variant)', flexShrink:0 }}>
+          {open ? (
+            <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:8, background:'var(--surface-low)', marginBottom:8 }}>
+              <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,var(--primary),#2e7d8c)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:13, flexShrink:0 }}>
+                {user?.name?.[0]?.toUpperCase() || 'P'}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ margin:0, fontSize:13, fontWeight:600, color:'var(--on-surface)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.name}</p>
+                <p style={{ margin:0, fontSize:11, color:'var(--outline)' }}>Patient</p>
+              </div>
+            </div>
+          ) : null}
+          <button onClick={() => setShowLogout(true)}
+            style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding: open ? '10px 12px' : '10px', justifyContent: open ? 'flex-start' : 'center', borderRadius:8, border:'none', background:'transparent', color:'var(--error)', cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:500, transition:'background 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--error-container)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <LogOut size={20} style={{ flexShrink:0 }} />
+            {open && <span>Déconnexion</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* ── CONTENU ── */}
+      <div className="main-content" style={{ flex:1, marginLeft: open ? 248 : 68, transition:'margin-left 0.25s ease', display:'flex', flexDirection:'column', minHeight:'100vh' }}>
+
+        {/* Header */}
+        <header style={{
+          position:'sticky', top:0, zIndex:30,
+          background:'var(--surface)',
+          borderBottom:'1px solid var(--outline-variant)',
+          height:64, display:'flex', alignItems:'center',
+          justifyContent:'space-between', padding:'0 24px',
+        }}>
+          <div>
+            <p style={{ fontSize:12, fontWeight:500, color:'var(--outline)', margin:0, textTransform:'uppercase', letterSpacing:'0.08em' }}>
+              Espace Patient
+            </p>
+            <h1 style={{ fontSize:18, fontWeight:700, color:'var(--primary)', margin:0 }}>
+              {currentLabel}
+            </h1>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <button style={{ width:40, height:40, borderRadius:8, border:'1px solid var(--outline-variant)', background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', color:'var(--on-surface-variant)' }}>
+              <Bell size={20} />
+              <span style={{ position:'absolute', top:8, right:8, width:7, height:7, background:'var(--secondary)', borderRadius:'50%', border:'2px solid var(--surface)' }} />
+            </button>
+            <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--surface-low)', padding:'6px 14px 6px 8px', borderRadius:8, cursor:'pointer' }}
+              onClick={() => navigate('/patient/profile')}>
+              <div style={{ width:30, height:30, borderRadius:'50%', background:'linear-gradient(135deg,var(--primary),#2e7d8c)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:13 }}>
+                {user?.name?.[0]?.toUpperCase() || 'P'}
+              </div>
+              <div>
+                <p style={{ margin:0, fontSize:13, fontWeight:600, color:'var(--on-surface)', lineHeight:1.2 }}>{user?.name}</p>
+                <p style={{ margin:0, fontSize:11, color:'var(--outline)', lineHeight:1.2 }}>Patient</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main style={{ flex:1, padding:24 }}>
+          {children}
+        </main>
+      </div>
+
+      {/* Bottom nav mobile */}
+      <BottomNav role="patient" />
+
+      {/* Modal logout */}
+      {showLogout && (
+        <LogoutModal
+          onConfirm={handleLogout}
+          onCancel={() => setShowLogout(false)}
+        />
+      )}
+    </div>
+  );
+}
