@@ -1,133 +1,224 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Video, MapPin, Check, X, MessageSquare } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import api from '../../api/axios';
+import { getEcho } from '../../api/echo';
 
-const STATUS_CONFIG = {
-    confirmed: { label: 'Confirmé',   bg: '#dcfce7', color: '#16a34a' },
-    pending:   { label: 'En attente', bg: '#fef9c3', color: '#ca8a04' },
-    completed: { label: 'Terminé',    bg: '#e7eeff', color: '#016472' },
-    cancelled: { label: 'Annulé',     bg: '#fee2e2', color: '#dc2626' },
+const DS = {
+  primary:'#016472', secondary:'#E8613A', surface:'#ffffff',
+  surfaceLow:'#f0f3ff', surfaceContainer:'#e7eeff',
+  onSurface:'#111c2d', outline:'#6f797b', outlineVariant:'#bec8cb',
+  error:'#ba1a1a', errorContainer:'#ffdad6',
 };
 
-const ALL_RDV = [
-    { id: 1, patient: 'M. Talla Jean',    motif: 'Contrôle tension',     heure: '09h00', date: "Aujourd'hui", type: 'Vidéo',      status: 'confirmed', fee: '15 000' },
-    { id: 2, patient: 'Mme Eboa Claire',  motif: 'Douleurs thoraciques',  heure: '10h30', date: "Aujourd'hui", type: 'Vidéo',      status: 'confirmed', fee: '15 000' },
-    { id: 3, patient: 'M. Biya Paul',     motif: 'Suivi traitement',     heure: '14h00', date: "Aujourd'hui", type: 'En personne', status: 'pending',   fee: '15 000' },
-    { id: 4, patient: 'Mme Ngo Marie',    motif: 'Résultats analyse',    heure: '15h30', date: "Aujourd'hui", type: 'Vidéo',      status: 'confirmed', fee: '15 000' },
-    { id: 5, patient: 'M. Fouda Luc',     motif: 'Première consultation', heure: '09h00', date: 'Demain',      type: 'Vidéo',      status: 'pending',   fee: '15 000' },
-    { id: 6, patient: 'Mme Ateba Rose',   motif: 'Suivi cardiaque',      heure: '11h00', date: 'Demain',      type: 'Vidéo',      status: 'confirmed', fee: '15 000' },
-    { id: 7, patient: 'M. Ndoumbe Eric',  motif: 'Contrôle annuel',      heure: '10h00', date: '12 Jun 2026', type: 'En personne', status: 'completed', fee: '15 000' },
-];
+const STATUS = {
+  confirmed: { label:'Confirmé',   bg:'#e1f5ee', color:'#016472' },
+  pending:   { label:'En attente', bg:'#fff8e7', color:'#884b00' },
+  completed: { label:'Terminé',    bg: '#e7eeff', color:'#016472' },
+  cancelled: { label:'Annulé',     bg:'#ffdad6', color:'#ba1a1a' },
+};
 
-const TABS = ["Aujourd'hui", 'Demain', 'Cette semaine', 'Tous'];
+const TABS = ["Aujourd'hui", 'À venir', 'Terminés', 'Tous'];
 
-const DoctorAgenda = () => {
-    const [activeTab, setActiveTab] = useState("Aujourd'hui");
-    const [showModal, setShowModal] = useState(null);
+export default function DoctorAgenda() {
+  const navigate       = useNavigate();
+  const { user }       = useSelector(s => s.auth);
+  const [rdvs,    setRdvs]    = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [tab,     setTab]     = useState("Aujourd'hui");
+  const [modal,   setModal]   = useState(null);
+  const [acting,  setActing]  = useState(null);
 
-    const filtered = ALL_RDV.filter(r => {
-        if (activeTab === 'Tous') return true;
-        if (activeTab === 'Cette semaine') return ["Aujourd'hui", 'Demain', '12 Jun 2026'].includes(r.date);
-        return r.date === activeTab;
+  const load = async () => {
+    try {
+      const res = await api.get('/doctor/appointments');
+      setRdvs(res.data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  // Écouter les nouveaux RDV en temps réel
+  useEffect(() => {
+    if (!user?.id) return;
+    const echo = getEcho();
+    const ch   = echo.private(`doctor.${user.id}`);
+    ch.listen('.appointment.created', (data) => {
+      setRdvs(prev => [data, ...prev]);
     });
+    return () => ch.stopListening('.appointment.created');
+  }, [user?.id]);
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontFamily: "'Inter', sans-serif" }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#111c2d' }}>Mon Agenda</h2>
-                    <p style={{ margin: 0, fontSize: 13, color: '#6f797b' }}>Gérez vos rendez-vous et consultations</p>
-                </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                    <div style={{ background: '#dcfce7', color: '#16a34a', padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700 }}>
-                        ✅ {ALL_RDV.filter(r => r.status === 'confirmed').length} confirmés
-                    </div>
-                    <div style={{ background: '#fef9c3', color: '#ca8a04', padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700 }}>
-                        ⏳ {ALL_RDV.filter(r => r.status === 'pending').length} en attente
-                    </div>
-                </div>
-            </div>
+  const isToday = (dateStr) => {
+    const d = new Date(dateStr);
+    const t = new Date();
+    return d.getDate()===t.getDate() && d.getMonth()===t.getMonth() && d.getFullYear()===t.getFullYear();
+  };
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: 8, background: 'white', padding: 6, borderRadius: 14, border: '1px solid #e7eeff', width: 'fit-content' }}>
-                {TABS.map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, background: activeTab === tab ? '#016472' : 'transparent', color: activeTab === tab ? 'white' : '#6f797b', transition: 'all 0.2s' }}>
-                        {tab}
-                    </button>
-                ))}
-            </div>
+const filtered = rdvs.filter(a => {
+    if (tab === "Aujourd'hui") return isToday(a.scheduled_at) && a.status !== 'completed' && a.status !== 'cancelled';
+    if (tab === 'À venir')     return ['confirmed','pending'].includes(a.status) && !isToday(a.scheduled_at);
+    if (tab === 'Terminés')    return a.status === 'completed' || a.status === 'cancelled';
+    return true;
+});
 
-            {/* Liste */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {filtered.map(rdv => {
-                    const st = STATUS_CONFIG[rdv.status];
-                    return (
-                        <div key={rdv.id} style={{ background: 'white', borderRadius: 16, padding: '18px 24px', border: '1px solid #e7eeff', display: 'flex', alignItems: 'center', gap: 18 }}>
-                            {/* Heure */}
-                            <div style={{ textAlign: 'center', minWidth: 60, background: '#f0f3ff', borderRadius: 12, padding: '10px 8px' }}>
-                                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#016472' }}>{rdv.heure}</p>
-                                <p style={{ margin: 0, fontSize: 11, color: '#6f797b' }}>{rdv.date}</p>
-                            </div>
+  const handleAccept = async (rdv) => {
+    setActing(rdv.id);
+    try {
+      const res = await api.post(`/doctor/consultations/${rdv.id}/accept`);
+      setRdvs(prev => prev.map(r => r.id === rdv.id ? { ...r, status:'confirmed' } : r));
+      setModal(null);
+      if (rdv.type === 'video') {
+        navigate(`/consultation/room/${rdv.id}`, {
+          state: { channel: res.data.channel, token: res.data.token, appId: res.data.app_id, role:'doctor' }
+        });
+      } else {
+        navigate(`/consultation/chat/${rdv.id}`);
+      }
+    } catch (e) { console.error(e); }
+    finally { setActing(null); }
+  };
 
-                            {/* Avatar patient */}
-                            <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'linear-gradient(135deg, #016472, #2e7d8c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
-                                {rdv.patient.split(' ').pop()[0]}
-                            </div>
+  const handleReject = async (id) => {
+    setActing(id);
+    try {
+      await api.post(`/doctor/consultations/${id}/reject`);
+      setRdvs(prev => prev.map(r => r.id === id ? { ...r, status:'cancelled' } : r));
+      setModal(null);
+    } catch (e) { console.error(e); }
+    finally { setActing(null); }
+  };
 
-                            {/* Infos */}
-                            <div style={{ flex: 1 }}>
-                                <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 15, color: '#111c2d' }}>{rdv.patient}</p>
-                                <p style={{ margin: 0, fontSize: 13, color: '#6f797b' }}>{rdv.motif} • {rdv.type} • {rdv.fee} XAF</p>
-                            </div>
+  const getInitials = (name) => {
+    const p = (name||'').split(' ');
+    return (p[0]?.[0]||'') + (p[1]?.[0]||'');
+  };
 
-                            {/* Status */}
-                            <span style={{ background: st.bg, color: st.color, padding: '5px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>{st.label}</span>
-
-                            {/* Actions */}
-                            <div style={{ display: 'flex', gap: 8 }}>
-                                {rdv.status === 'confirmed' && (
-                                    <button style={{ background: '#016472', color: 'white', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                        🎥 Démarrer
-                                    </button>
-                                )}
-                                {rdv.status === 'pending' && (
-                                    <>
-                                        <button onClick={() => setShowModal(rdv)} style={{ background: '#dcfce7', color: '#16a34a', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                            ✅ Confirmer
-                                        </button>
-                                        <button style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                            ✕ Refuser
-                                        </button>
-                                    </>
-                                )}
-                                {rdv.status === 'completed' && (
-                                    <button style={{ background: '#e7eeff', color: '#016472', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                        📋 Voir dossier
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Modal confirmation */}
-            {showModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowModal(null)}>
-                    <div style={{ background: 'white', borderRadius: 20, padding: 32, maxWidth: 420, width: '90%' }} onClick={e => e.stopPropagation()}>
-                        <h3 style={{ margin: '0 0 8px', fontWeight: 800, color: '#111c2d' }}>Confirmer le rendez-vous</h3>
-                        <p style={{ color: '#6f797b', fontSize: 14, marginBottom: 20 }}>Voulez-vous confirmer ce rendez-vous ?</p>
-                        <div style={{ background: '#f0f3ff', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-                            <p style={{ margin: '0 0 6px', fontWeight: 700, color: '#111c2d' }}>{showModal.patient}</p>
-                            <p style={{ margin: 0, fontSize: 13, color: '#6f797b' }}>{showModal.motif} • {showModal.heure} • {showModal.date}</p>
-                        </div>
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <button onClick={() => setShowModal(null)} style={{ flex: 1, padding: '12px', border: '1.5px solid #dde3f0', borderRadius: 12, background: 'white', color: '#3f484b', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-                            <button onClick={() => setShowModal(null)} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 12, background: '#016472', color: 'white', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✅ Confirmer</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+  return (
+    <div style={{ fontFamily:"'Inter',sans-serif" }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h1 style={{ fontSize:'clamp(18px,3vw,24px)', fontWeight:700, color: DS.onSurface, margin:'0 0 4px' }}>Mon Agenda</h1>
+          <p style={{ fontSize:14, color: DS.outline, margin:0 }}>
+            {rdvs.filter(r => ['confirmed','pending'].includes(r.status)).length} rendez-vous actifs
+          </p>
         </div>
-    );
-};
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+          <div style={{ background:'#e1f5ee', color: DS.primary, padding:'7px 14px', borderRadius:10, fontSize:13, fontWeight:600 }}>
+            ✅ {rdvs.filter(r => r.status==='confirmed').length} confirmés
+          </div>
+          <div style={{ background:'#fff8e7', color:'#884b00', padding:'7px 14px', borderRadius:10, fontSize:13, fontWeight:600 }}>
+            ⏳ {rdvs.filter(r => r.status==='pending').length} en attente
+          </div>
+        </div>
+      </div>
 
-export default DoctorAgenda;
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:4, background: DS.surface, padding:4, borderRadius:12, border:`1px solid ${DS.outlineVariant}`, width:'fit-content', marginBottom:20, flexWrap:'wrap' }}>
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{ padding:'8px 16px', borderRadius:8, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600, background: tab===t ? DS.primary : 'transparent', color: tab===t ? '#fff' : DS.outline, transition:'all .2s' }}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p style={{ color: DS.outline, textAlign:'center', padding:40 }}>Chargement...</p>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'clamp(32px,6vw,48px)', background: DS.surface, borderRadius:12, border:`1px solid ${DS.outlineVariant}` }}>
+          <p style={{ fontSize:40, margin:'0 0 12px' }}>📭</p>
+          <p style={{ color: DS.outline, fontWeight:600 }}>Aucun rendez-vous dans cette catégorie</p>
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          {filtered.map(rdv => {
+            const st = STATUS[rdv.status] || STATUS.pending;
+            return (
+              <div key={rdv.id} style={{ background: DS.surface, borderRadius:12, padding:'clamp(14px,3vw,20px)', border:`1.5px solid ${rdv.status==='pending' ? '#fde047' : DS.outlineVariant}`, display:'flex', alignItems:'center', gap:'clamp(10px,2vw,16px)', flexWrap:'wrap' }}>
+                {/* Avatar patient */}
+                <div style={{ width:46, height:46, borderRadius:'50%', background:`linear-gradient(135deg,${DS.primary},#2e7d8c)`, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:16, flexShrink:0 }}>
+                  {getInitials(rdv.patient?.name || 'P').toUpperCase()}
+                </div>
+                {/* Infos */}
+                <div style={{ flex:1, minWidth:140 }}>
+                  <p style={{ margin:'0 0 3px', fontWeight:600, fontSize:'clamp(13px,2vw,15px)', color: DS.onSurface }}>
+                    {rdv.patient?.name || 'Patient'}
+                  </p>
+                  <p style={{ margin:'0 0 6px', fontSize:12, color: DS.outline }}>
+                    {rdv.reason || 'Consultation générale'}
+                  </p>
+                  <div style={{ display:'flex', gap:'clamp(8px,2vw,12px)', flexWrap:'wrap' }}>
+                    <span style={{ fontSize:12, color: DS.outline }}>📅 {rdv.scheduled_at}</span>
+                    <span style={{ fontSize:12, color: DS.outline }}>
+                      {rdv.type === 'video' ? '🎥 Vidéo' : rdv.type === 'message' ? '💬 Message' : '🏥 En personne'}
+                    </span>
+                    <span style={{ fontSize:12, color: DS.outline }}>💳 {rdv.fee}</span>
+                  </div>
+                </div>
+                {/* Status */}
+                <span style={{ background: st.bg, color: st.color, padding:'4px 12px', borderRadius:999, fontSize:12, fontWeight:600, flexShrink:0 }}>
+                  {st.label}
+                </span>
+                {/* Actions */}
+                <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                  {rdv.status === 'pending' && (
+                    <>
+                      <button onClick={() => setModal(rdv)}
+                        style={{ background:'#e1f5ee', color: DS.primary, border:'none', borderRadius:8, padding:'8px 14px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
+                        <Check size={13} /> Accepter
+                      </button>
+                      <button onClick={() => handleReject(rdv.id)} disabled={acting===rdv.id}
+                        style={{ background: DS.errorContainer, color: DS.error, border:'none', borderRadius:8, padding:'8px 14px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
+                        <X size={13} /> Refuser
+                      </button>
+                    </>
+                  )}
+                  {rdv.status === 'confirmed' && (
+                    <button onClick={() => handleAccept(rdv)}
+                      style={{ background: DS.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 14px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
+                      {rdv.type === 'video' ? <><Video size={13}/> Démarrer</> : <><MessageSquare size={13}/> Chat</>}
+                    </button>
+                  )}
+                  {rdv.status === 'completed' && (
+                    <span style={{ fontSize:12, color: DS.outline, padding:'8px 14px' }}>✓ Terminée</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modal confirmation acceptation */}
+      {modal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={() => !acting && setModal(null)}>
+          <div style={{ background: DS.surface, borderRadius:16, padding:'clamp(20px,4vw,28px)', maxWidth:380, width:'100%' }}
+            onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize:18, fontWeight:700, color: DS.onSurface, margin:'0 0 6px' }}>Accepter cette consultation ?</h3>
+            <p style={{ fontSize:13, color: DS.outline, margin:'0 0 16px' }}>La consultation démarrera immédiatement.</p>
+            <div style={{ background: DS.surfaceLow, borderRadius:10, padding:14, marginBottom:20 }}>
+              <p style={{ margin:'0 0 4px', fontWeight:700, color: DS.onSurface }}>{modal.patient?.name}</p>
+              <p style={{ margin:0, fontSize:13, color: DS.outline }}>
+                {modal.reason} · {modal.type === 'video' ? '🎥 Vidéo' : '💬 Message'} · {modal.fee}
+              </p>
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setModal(null)} disabled={!!acting}
+                style={{ flex:1, padding:'12px', border:`1.5px solid ${DS.outlineVariant}`, borderRadius:10, background: DS.surface, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                Annuler
+              </button>
+              <button onClick={() => handleAccept(modal)} disabled={!!acting}
+                style={{ flex:1, padding:'12px', background: DS.primary, color:'#fff', border:'none', borderRadius:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: acting ? 0.7 : 1 }}>
+                {acting ? 'Démarrage...' : '✅ Accepter'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

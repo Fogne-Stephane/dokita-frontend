@@ -4,10 +4,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clearAuth } from '../../redux/slices/authSlice';
 import { useSessionTimeout } from '../../hooks/useSessionTimeout';
 import LogoutModal from '../ui/LogoutModal';
+import NotificationPanel from '../doctor/NotificationPanel';
 import BottomNav from './BottomNav';
 import logo from '../../assets/logo.png';
 import {
-  Home, Calendar, Users, FileText, MessageSquare,
+  Home, Calendar, Users, FileText, MessageSquare, CreditCard,
   User, ChevronLeft, ChevronRight, Bell, LogOut, Circle
 } from 'lucide-react';
 
@@ -16,7 +17,7 @@ const NAV_ITEMS = [
   { path:'/doctor/agenda',        icon: Calendar,      label:'Agenda' },
   { path:'/doctor/patients',      icon: Users,         label:'Mes Patients' },
   { path:'/doctor/prescriptions', icon: FileText,      label:'Prescriptions' },
-  { path:'/doctor/messages',      icon: MessageSquare, label:'Messages' },
+  { path:'/doctor/payments',      icon: CreditCard,    label:'Paiements' },
   { path:'/doctor/profile',       icon: User,          label:'Mon Profil' },
 ];
 
@@ -41,15 +42,19 @@ export default function DoctorLayout({ children }) {
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--background)', fontFamily:"'Inter',sans-serif" }}>
 
       {/* ── SIDEBAR ── */}
-      <aside className="sidebar" style={{
-        width: open ? 248 : 68, flexShrink:0,
-        background:'var(--surface)',
-        borderRight:'1px solid var(--outline-variant)',
-        display:'flex', flexDirection:'column',
-        transition:'width 0.25s ease',
-        position:'fixed', top:0, left:0, height:'100vh', zIndex:40,
-        overflow:'hidden',
-      }}>
+<aside
+  className={`sidebar${open ? '' : ' closed'}`}
+  style={{
+    // Supprime width d'ici — géré par CSS
+    flexShrink:0,
+    background:'var(--surface)',
+    borderRight:'1px solid var(--outline-variant)',
+    display:'flex', flexDirection:'column',
+    transition:'width 0.25s ease',
+    position:'fixed', top:0, left:0,
+    height:'100vh', zIndex:40,
+    overflow:'hidden',
+  }}>
 
         {/* Logo */}
         <div style={{ height:64, display:'flex', alignItems:'center', justifyContent: open ? 'space-between' : 'center', padding: open ? '0 16px' : '0 12px', borderBottom:'1px solid var(--outline-variant)', flexShrink:0 }}>
@@ -125,32 +130,50 @@ export default function DoctorLayout({ children }) {
       </aside>
 
       {/* ── CONTENU ── */}
-      <div className="main-content" style={{ flex:1, marginLeft: open ? 248 : 68, transition:'margin-left 0.25s ease', display:'flex', flexDirection:'column', minHeight:'100vh' }}>
-        <header style={{ position:'sticky', top:0, zIndex:30, background:'var(--surface)', borderBottom:'1px solid var(--outline-variant)', height:64, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px' }}>
-          <div>
-            <p style={{ fontSize:12, fontWeight:500, color:'var(--outline)', margin:0, textTransform:'uppercase', letterSpacing:'0.08em' }}>Espace Médecin</p>
-            <h1 style={{ fontSize:18, fontWeight:700, color:'var(--primary)', margin:0 }}>{currentLabel}</h1>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ background:'var(--surface-low)', padding:'6px 14px', borderRadius:8, fontSize:13, fontWeight:500, color:'var(--primary)' }}>
-              📅 {new Date().toLocaleDateString('fr',{weekday:'short',day:'numeric',month:'short'})}
-            </div>
-            <button style={{ width:40, height:40, borderRadius:8, border:'1px solid var(--outline-variant)', background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', color:'var(--on-surface-variant)' }}>
-              <Bell size={20} />
-              <span style={{ position:'absolute', top:8, right:8, width:7, height:7, background:'var(--secondary)', borderRadius:'50%', border:'2px solid var(--surface)' }} />
-            </button>
-            <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--surface-low)', padding:'6px 14px 6px 8px', borderRadius:8 }}>
-              <div style={{ width:30, height:30, borderRadius:'50%', background:'linear-gradient(135deg,var(--secondary),#E8913A)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:13 }}>
-                {user?.name?.[0]?.toUpperCase() || 'D'}
-              </div>
-              <div>
-                <p style={{ margin:0, fontSize:13, fontWeight:600, color:'var(--on-surface)', lineHeight:1.2 }}>Dr. {user?.name}</p>
-                <p style={{ margin:0, fontSize:11, color:'var(--outline)', lineHeight:1.2 }}>Médecin</p>
-              </div>
-            </div>
-          </div>
-        </header>
-        <main style={{ flex:1, padding:24 }}>{children}</main>
+<div className={`main-content${open ? '' : ' sidebar-closed'}`}
+  style={{
+    flex:1,
+    display:'flex', flexDirection:'column',
+    minHeight:'100vh',
+  }}>       <header style={{
+  position:'sticky', top:0, zIndex:30,
+  background:'var(--surface)',
+  borderBottom:'1px solid var(--outline-variant)',
+  height: 'var(--header-h)',
+  display:'flex', alignItems:'center',
+  justifyContent:'space-between',
+  padding:'0 clamp(12px, 3vw, 24px)',
+}}>
+  <div>
+    <p style={{ fontSize:11, fontWeight:600, color:'var(--outline)', margin:0, textTransform:'uppercase', letterSpacing:'0.08em' }}>
+      Espace Medecin
+    </p>
+    <h1 style={{ fontSize:'clamp(15px,2.5vw,18px)', fontWeight:700, color:'var(--primary)', margin:0 }}>
+      {currentLabel}
+    </h1>
+  </div>
+  <div style={{ display:'flex', alignItems:'center', gap:'clamp(8px,2vw,12px)' }}>
+    {/* Notification — cachée sur très petit écran */}
+    <NotificationPanel />
+    {/* Avatar — version compacte sur mobile */}
+    <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--surface-low)', padding:'6px clamp(8px,2vw,14px) 6px 6px', borderRadius:8 }}>
+      <div style={{ width:30, height:30, borderRadius:'50%', background:'linear-gradient(135deg,var(--primary),#2e7d8c)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:13, flexShrink:0 }}>
+        {user?.name?.[0]?.toUpperCase() || 'P'}
+      </div>
+      {/* Nom caché sur mobile */}
+      <div className="hide-mobile">
+        <p style={{ margin:0, fontSize:13, fontWeight:600, color:'var(--on-surface)', lineHeight:1.2 }}>{user?.name}</p>
+        <p style={{ margin:0, fontSize:11, color:'var(--outline)', lineHeight:1.2 }}>Patient</p>
+      </div>
+    </div>
+  </div>
+</header>
+        <main style={{
+  flex:1,
+  padding:'clamp(12px, 3vw, 24px)',
+}}>
+          {children}
+        </main>
       </div>
 
       <BottomNav role="doctor" />

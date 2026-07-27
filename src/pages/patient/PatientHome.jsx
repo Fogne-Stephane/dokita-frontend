@@ -1,127 +1,193 @@
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Video, FileText, Pill, ArrowRight, Stethoscope } from 'lucide-react';
+import api from '../../api/axios';
 
-const StatCard = ({ icon, value, label, color }) => (
-    <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #e7eeff', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{icon}</div>
-        <div>
-            <p style={{ fontSize: 26, fontWeight: 800, color: '#111c2d', margin: 0 }}>{value}</p>
-            <p style={{ fontSize: 13, color: '#6f797b', margin: 0 }}>{label}</p>
-        </div>
-    </div>
-);
-
-const PatientHome = () => {
-    const { user } = useSelector((state) => state.auth);
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-            {/* Bannière de bienvenue */}
-            <div style={{ background: 'linear-gradient(135deg, #016472 0%, #004e5a 100%)', borderRadius: 20, padding: '28px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', right: -40, top: -40, width: 200, height: 200, background: '#E8613A', borderRadius: '50%', opacity: 0.1 }} />
-                <div>
-                    <p style={{ margin: '0 0 4px', opacity: 0.75, fontSize: 14 }}>{greeting} 👋</p>
-                    <h2 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800 }}>{user?.name || 'Patient'}</h2>
-                    <p style={{ margin: 0, opacity: 0.8, fontSize: 14 }}>Votre prochain rendez-vous est dans <strong>2 jours</strong></p>
-                </div>
-                <Link to="/patient/appointments" style={{ background: 'linear-gradient(90deg, #E8613A, #E8913A)', padding: '12px 24px', borderRadius: 12, color: 'white', textDecoration: 'none', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 14px rgba(232,97,58,0.4)', whiteSpace: 'nowrap' }}>
-                    Prendre RDV
-                </Link>
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-                <StatCard icon="📅" value="3"  label="Rendez-vous à venir"  color="#016472" />
-                <StatCard icon="✅" value="12" label="Consultations totales" color="#22c55e" />
-                <StatCard icon="💊" value="2"  label="Prescriptions actives" color="#E8613A" />
-                <StatCard icon="🗂️" value="5"  label="Documents médicaux"   color="#8b5cf6" />
-            </div>
-
-            {/* Contenu principal */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-
-                {/* Prochain RDV */}
-                <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #e7eeff' }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111c2d', margin: '0 0 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        📅 Prochains rendez-vous
-                    </h3>
-                    {[
-                        { doctor: 'Dr. Kamga Pierre', spec: 'Cardiologue', date: '10 Juin 2026', heure: '10h00', type: 'Vidéo' },
-                        { doctor: 'Dr. Mballa Sophie', spec: 'Pédiatre',    date: '15 Juin 2026', heure: '14h30', type: 'Vidéo' },
-                    ].map((rdv, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: i === 0 ? '1px solid #f0f3ff' : 'none' }}>
-                            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #016472, #2e7d8c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 20 }}>👨‍⚕️</div>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#111c2d' }}>{rdv.doctor}</p>
-                                <p style={{ margin: 0, fontSize: 12, color: '#6f797b' }}>{rdv.spec} • {rdv.date} à {rdv.heure}</p>
-                            </div>
-                            <span style={{ background: '#e7eeff', color: '#016472', padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600 }}>{rdv.type}</span>
-                        </div>
-                    ))}
-                    <Link to="/patient/appointments" style={{ display: 'block', textAlign: 'center', marginTop: 16, color: '#016472', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-                        Voir tous les rendez-vous →
-                    </Link>
-                </div>
-
-                {/* Activité récente */}
-                <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #e7eeff' }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111c2d', margin: '0 0 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        🕐 Activité récente
-                    </h3>
-                    {[
-                        { icon: '💊', text: 'Ordonnance reçue',        sub: 'Dr. Fongang • il y a 2 jours',   color: '#E8613A' },
-                        { icon: '✅', text: 'Consultation terminée',   sub: 'Dr. Kamga • il y a 5 jours',     color: '#22c55e' },
-                        { icon: '🗂️', text: 'Document ajouté',         sub: 'Analyse sanguine • il y a 1 sem', color: '#8b5cf6' },
-                        { icon: '💬', text: 'Message de votre médecin', sub: 'Dr. Mballa • il y a 1 sem',      color: '#016472' },
-                    ].map((a, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < 3 ? '1px solid #f0f3ff' : 'none' }}>
-                            <div style={{ width: 36, height: 36, borderRadius: 10, background: a.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>{a.icon}</div>
-                            <div>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#111c2d' }}>{a.text}</p>
-                                <p style={{ margin: 0, fontSize: 12, color: '#6f797b' }}>{a.sub}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Accès rapide */}
-                <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #e7eeff' }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111c2d', margin: '0 0 18px' }}>⚡ Accès rapide</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                        {[
-                            { to: '/patient/doctors',        icon: '👨‍⚕️', label: 'Trouver un médecin', color: '#016472' },
-                            { to: '/patient/prescriptions',  icon: '💊',  label: 'Mes prescriptions',  color: '#E8613A' },
-                            { to: '/patient/medical-record', icon: '🗂️', label: 'Dossier médical',     color: '#8b5cf6' },
-                            { to: '/patient/messages',       icon: '💬',  label: 'Messages',            color: '#22c55e' },
-                        ].map((item, i) => (
-                            <Link key={i} to={item.to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px', background: item.color + '0f', borderRadius: 12, textDecoration: 'none', border: `1px solid ${item.color}22`, transition: 'transform 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                                <span style={{ fontSize: 22 }}>{item.icon}</span>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: item.color }}>{item.label}</span>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Santé du jour */}
-                <div style={{ background: 'linear-gradient(135deg, #E8613A 0%, #E8913A 100%)', borderRadius: 16, padding: 24, color: 'white' }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 14px' }}>💡 Conseil santé du jour</h3>
-                    <p style={{ fontSize: 14, lineHeight: 1.7, opacity: 0.95, margin: '0 0 20px' }}>
-                        Boire au moins <strong>1,5 à 2 litres d'eau</strong> par jour est essentiel pour maintenir votre corps hydraté, surtout par les chaleurs de Douala.
-                    </p>
-                    <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span>🤖</span>
-                        <span style={{ fontSize: 13, fontWeight: 500 }}>Powered by Dokita AI</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+const DS = {
+  primary:'#016472', secondary:'#E8613A', surface:'#ffffff',
+  surfaceLow:'#f0f3ff', surfaceContainer:'#e7eeff',
+  onSurface:'#111c2d', outline:'#6f797b', outlineVariant:'#bec8cb',
 };
 
-export default PatientHome;
+export default function PatientHome() {
+  const navigate    = useNavigate();
+  const { user }    = useSelector(s => s.auth);
+  const [data, setData]     = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const hour     = new Date().getHours();
+  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [apptRes, presRes, recRes] = await Promise.all([
+          api.get('/patient/appointments'),
+          api.get('/patient/prescriptions'),
+          api.get('/patient/medical-record'),
+        ]);
+        setData({
+          appointments:  apptRes.data,
+          prescriptions: presRes.data,
+          stats:         recRes.data?.stats,
+        });
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const upcoming   = data?.appointments?.filter(a => ['confirmed','pending'].includes(a.status)) || [];
+  const nextRdv    = upcoming[0];
+  const activePres = data?.prescriptions?.filter(p => p.is_active) || [];
+
+  return (
+    <div style={{ fontFamily:"'Inter',sans-serif", display:'flex', flexDirection:'column', gap:'clamp(16px,3vw,24px)' }}>
+
+      {/* Bannière de bienvenue */}
+      <div style={{ background:`linear-gradient(135deg,${DS.primary} 0%,#004e5a 100%)`, borderRadius:16, padding:'clamp(20px,4vw,28px)', color:'#fff', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', right:-40, top:-40, width:200, height:200, background:'rgba(232,97,58,0.15)', borderRadius:'50%', pointerEvents:'none' }} />
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16, position:'relative', zIndex:1 }}>
+          <div>
+            <p style={{ margin:'0 0 4px', opacity:0.8, fontSize:14 }}>{greeting} 👋</p>
+            <h2 style={{ margin:'0 0 8px', fontSize:'clamp(18px,3vw,24px)', fontWeight:700 }}>{user?.name}</h2>
+            <p style={{ margin:0, opacity:0.8, fontSize:13 }}>
+              {nextRdv
+                ? `Prochain RDV : ${nextRdv.scheduled_at}`
+                : 'Aucun rendez-vous à venir'}
+            </p>
+          </div>
+          <button onClick={() => navigate('/patient/doctors')}
+            style={{ background:`linear-gradient(90deg,${DS.secondary},#E8913A)`, padding:'11px 20px', borderRadius:10, color:'#fff', border:'none', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap', boxShadow:'0 4px 14px rgba(232,97,58,0.4)' }}>
+            + Consulter
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))', gap:'clamp(10px,2vw,16px)' }}>
+        {[
+          { icon:<Calendar size={22} color={DS.primary}/>,    val: upcoming.length,                              label:'RDV à venir',        path:'/patient/rdv' },
+          { icon:<Video size={22} color={DS.secondary}/>,     val: data?.appointments?.filter(a=>a.status==='completed').length || 0, label:'Consultations',    path:'/patient/consultations' },
+          { icon:<Pill size={22} color="#884b00"/>,            val: activePres.length,                            label:'Ordonnances actives', path:'/patient/prescriptions' },
+          { icon:<FileText size={22} color="#7c3aed"/>,        val: data?.stats?.total_documents || 0,            label:'Documents',           path:'/patient/medical-record' },
+        ].map((s,i) => (
+          <div key={i} onClick={() => navigate(s.path)}
+            style={{ background: DS.surface, borderRadius:12, padding:'clamp(14px,3vw,20px)', border:`1px solid ${DS.outlineVariant}`, display:'flex', alignItems:'center', gap:12, cursor:'pointer', transition:'box-shadow .2s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow='none'}>
+            <div style={{ width:44, height:44, borderRadius:12, background: DS.surfaceLow, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              {s.icon}
+            </div>
+            <div>
+              <p style={{ fontSize:24, fontWeight:700, color: DS.onSurface, margin:0, lineHeight:1.2 }}>{loading ? '—' : s.val}</p>
+              <p style={{ fontSize:12, color: DS.outline, margin:0 }}>{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'clamp(12px,2vw,20px)' }}>
+
+        {/* Prochains RDV */}
+        <div style={{ background: DS.surface, borderRadius:12, padding:'clamp(16px,3vw,22px)', border:`1px solid ${DS.outlineVariant}` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+            <h3 style={{ fontSize:15, fontWeight:700, color: DS.onSurface, margin:0 }}>📅 Prochains RDV</h3>
+            <button onClick={() => navigate('/patient/rdv')}
+              style={{ fontSize:12, color: DS.primary, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+              Voir tout <ArrowRight size={13}/>
+            </button>
+          </div>
+          {loading ? <p style={{ color: DS.outline, fontSize:13 }}>Chargement...</p>
+          : upcoming.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'20px 0' }}>
+              <p style={{ color: DS.outline, fontSize:13, margin:'0 0 12px' }}>Aucun rendez-vous à venir</p>
+              <button onClick={() => navigate('/patient/doctors')}
+                style={{ padding:'8px 16px', background: DS.surfaceContainer, color: DS.primary, border:'none', borderRadius:8, fontWeight:600, cursor:'pointer', fontFamily:'inherit', fontSize:13 }}>
+                Prendre un RDV
+              </button>
+            </div>
+          ) : upcoming.slice(0,3).map((rdv,i) => (
+            <div key={rdv.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i<Math.min(upcoming.length,3)-1 ? `1px solid ${DS.outlineVariant}` : 'none' }}>
+              <div style={{ width:40, height:40, borderRadius:10, background: DS.surfaceContainer, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                {rdv.type === 'video' ? <Video size={18} color={DS.primary}/> : <Stethoscope size={18} color={DS.primary}/>}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ margin:'0 0 2px', fontWeight:600, fontSize:13, color: DS.onSurface, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {rdv.doctor?.name}
+                </p>
+                <p style={{ margin:0, fontSize:12, color: DS.outline }}>{rdv.scheduled_at}</p>
+              </div>
+              <span style={{ fontSize:11, padding:'3px 8px', borderRadius:999, background: rdv.status==='confirmed' ? '#e1f5ee' : '#fff8e7', color: rdv.status==='confirmed' ? DS.primary : '#884b00', fontWeight:600, flexShrink:0 }}>
+                {rdv.status==='confirmed' ? 'Confirmé' : 'En attente'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Ordonnances actives */}
+        <div style={{ background: DS.surface, borderRadius:12, padding:'clamp(16px,3vw,22px)', border:`1px solid ${DS.outlineVariant}` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+            <h3 style={{ fontSize:15, fontWeight:700, color: DS.onSurface, margin:0 }}>💊 Ordonnances actives</h3>
+            <button onClick={() => navigate('/patient/prescriptions')}
+              style={{ fontSize:12, color: DS.primary, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+              Voir tout <ArrowRight size={13}/>
+            </button>
+          </div>
+          {loading ? <p style={{ color: DS.outline, fontSize:13 }}>Chargement...</p>
+          : activePres.length === 0 ? (
+            <p style={{ color: DS.outline, fontSize:13, textAlign:'center', padding:'20px 0' }}>Aucune ordonnance active</p>
+          ) : activePres.slice(0,3).map((p,i) => (
+            <div key={p.id} style={{ padding:'12px 0', borderBottom: i<Math.min(activePres.length,3)-1 ? `1px solid ${DS.outlineVariant}` : 'none' }}>
+              <p style={{ margin:'0 0 4px', fontWeight:600, fontSize:13, color: DS.onSurface }}>
+                {p.doctor_name}
+              </p>
+              <p style={{ margin:'0 0 4px', fontSize:12, color: DS.outline }}>
+                {p.medications?.length} médicament{p.medications?.length > 1 ? 's' : ''} · Valide jusqu'au {p.valid_until}
+              </p>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {(p.medications||[]).slice(0,2).map((m,j) => (
+                  <span key={j} style={{ fontSize:11, padding:'2px 8px', borderRadius:999, background: DS.surfaceContainer, color: DS.primary }}>
+                    {m.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Accès rapide */}
+        <div style={{ background: DS.surface, borderRadius:12, padding:'clamp(16px,3vw,22px)', border:`1px solid ${DS.outlineVariant}` }}>
+          <h3 style={{ fontSize:15, fontWeight:700, color: DS.onSurface, margin:'0 0 14px' }}>⚡ Accès rapide</h3>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            {[
+              { path:'/patient/doctors',        icon:'🩺', label:'Consulter',         color: DS.primary,   bg: DS.surfaceContainer },
+              { path:'/patient/rdv',            icon:'📅', label:'Mes RDV',           color:'#884b00',     bg:'#fff8e7' },
+              { path:'/patient/medical-record', icon:'🗂️', label:'Dossier médical',   color:'#7c3aed',     bg:'#f5f3ff' },
+              { path:'/patient/prescriptions',  icon:'💊', label:'Prescriptions',     color: DS.secondary, bg:'#fff4f0' },
+            ].map((item,i) => (
+              <button key={i} onClick={() => navigate(item.path)}
+                style={{ display:'flex', alignItems:'center', gap:10, padding:'clamp(10px,2vw,14px)', background: item.bg, borderRadius:10, border:'none', cursor:'pointer', fontFamily:'inherit', transition:'transform .15s', textAlign:'left' }}
+                onMouseEnter={e => e.currentTarget.style.transform='scale(1.03)'}
+                onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}>
+                <span style={{ fontSize:20 }}>{item.icon}</span>
+                <span style={{ fontSize:13, fontWeight:600, color: item.color }}>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Conseil santé */}
+        <div style={{ background:`linear-gradient(135deg,${DS.secondary},#E8913A)`, borderRadius:12, padding:'clamp(16px,3vw,22px)', color:'#fff' }}>
+          <h3 style={{ fontSize:15, fontWeight:700, margin:'0 0 10px' }}>💡 Conseil santé du jour</h3>
+          <p style={{ fontSize:13, lineHeight:1.7, opacity:0.95, margin:'0 0 14px' }}>
+            Boire au moins <strong>1,5 à 2 litres d'eau</strong> par jour est essentiel, surtout par les chaleurs de Douala. Commencez votre journée avec un grand verre d'eau.
+          </p>
+          <div style={{ background:'rgba(255,255,255,0.2)', borderRadius:8, padding:'8px 12px', fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
+            🤖 <span>Powered by Dokita AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

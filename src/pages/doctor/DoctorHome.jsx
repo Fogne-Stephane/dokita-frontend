@@ -1,135 +1,225 @@
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { Video, MessageSquare, Users, ArrowRight, Check, X } from 'lucide-react';
+import api from '../../api/axios';
 
-const StatCard = ({ icon, value, label, color, sub }) => (
-    <div style={{ background: 'white', borderRadius: 16, padding: 22, border: '1px solid #e7eeff', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 54, height: 54, borderRadius: 14, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>{icon}</div>
-        <div>
-            <p style={{ fontSize: 28, fontWeight: 800, color: '#111c2d', margin: 0 }}>{value}</p>
-            <p style={{ fontSize: 13, color: '#6f797b', margin: 0 }}>{label}</p>
-            {sub && <p style={{ fontSize: 11, color: color, fontWeight: 600, margin: '2px 0 0' }}>{sub}</p>}
-        </div>
-    </div>
-);
-
-const DoctorHome = () => {
-    const { user } = useSelector((state) => state.auth);
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-
-    const todayRdv = [
-        { id: 1, patient: 'M. Talla Jean',    motif: 'Contrôle tension',    heure: '09h00', type: 'Vidéo',      status: 'confirmed' },
-        { id: 2, patient: 'Mme Eboa Claire',  motif: 'Douleurs thoraciques', heure: '10h30', type: 'Vidéo',      status: 'confirmed' },
-        { id: 3, patient: 'M. Biya Paul',     motif: 'Suivi traitement',    heure: '14h00', type: 'En personne', status: 'pending' },
-        { id: 4, patient: 'Mme Ngo Marie',    motif: 'Résultats analyse',   heure: '15h30', type: 'Vidéo',      status: 'confirmed' },
-    ];
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-            {/* Bannière */}
-            <div style={{ background: 'linear-gradient(135deg, #0a3d4a 0%, #016472 100%)', borderRadius: 20, padding: '28px 32px', color: 'white', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', right: -40, top: -40, width: 220, height: 220, background: '#E8613A', borderRadius: '50%', opacity: 0.1 }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <p style={{ margin: '0 0 4px', opacity: 0.75, fontSize: 14 }}>{greeting} 👋</p>
-                        <h2 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800 }}>Dr. {user?.name}</h2>
-                        <p style={{ margin: '0 0 16px', opacity: 0.8, fontSize: 14 }}>Vous avez <strong>{todayRdv.length} rendez-vous</strong> aujourd'hui</p>
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>
-                                🟢 Disponible
-                            </div>
-                            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>
-                                ⭐ 4.9 / 5 — 128 avis
-                            </div>
-                        </div>
-                    </div>
-                    <Link to="/doctor/agenda" style={{ background: 'linear-gradient(90deg, #E8613A, #E8913A)', padding: '13px 26px', borderRadius: 12, color: 'white', textDecoration: 'none', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(232,97,58,0.4)' }}>
-                        Voir l'agenda →
-                    </Link>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-                <StatCard icon="📅" value="4"   label="RDV aujourd'hui"        color="#016472" sub="2 en attente" />
-                <StatCard icon="👥" value="47"  label="Patients ce mois"       color="#E8613A" sub="+8 nouveaux" />
-                <StatCard icon="✅" value="312" label="Consultations totales"   color="#22c55e" sub="Depuis jan. 2026" />
-                <StatCard icon="💊" value="28"  label="Prescriptions ce mois"  color="#8b5cf6" />
-            </div>
-
-            {/* Contenu */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20 }}>
-
-                {/* Agenda du jour */}
-                <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #e7eeff' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111c2d' }}>📅 Agenda du jour</h3>
-                        <Link to="/doctor/agenda" style={{ fontSize: 13, color: '#016472', fontWeight: 600, textDecoration: 'none' }}>Voir tout →</Link>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {todayRdv.map((rdv, i) => (
-                            <div key={rdv.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', background: '#f9f9ff', borderRadius: 12, border: '1px solid #f0f3ff' }}>
-                                <div style={{ textAlign: 'center', minWidth: 48 }}>
-                                    <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#016472' }}>{rdv.heure}</p>
-                                </div>
-                                <div style={{ width: 1, height: 36, background: '#e7eeff' }} />
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ margin: '0 0 2px', fontWeight: 600, fontSize: 14, color: '#111c2d' }}>{rdv.patient}</p>
-                                    <p style={{ margin: 0, fontSize: 12, color: '#6f797b' }}>{rdv.motif} • {rdv.type}</p>
-                                </div>
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                    {rdv.status === 'confirmed' && (
-                                        <button style={{ background: '#016472', color: 'white', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                            🎥 Démarrer
-                                        </button>
-                                    )}
-                                    {rdv.status === 'pending' && (
-                                        <button style={{ background: '#fef9c3', color: '#ca8a04', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                            ⏳ En attente
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Colonne droite */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                    {/* Patients récents */}
-                    <div style={{ background: 'white', borderRadius: 16, padding: 22, border: '1px solid #e7eeff' }}>
-                        <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#111c2d' }}>👥 Patients récents</h3>
-                        {[
-                            { name: 'M. Talla Jean',   last: 'Hier',      avatar: 'T' },
-                            { name: 'Mme Eboa Claire', last: 'Il y a 2j', avatar: 'E' },
-                            { name: 'M. Biya Paul',    last: 'Il y a 5j', avatar: 'B' },
-                        ].map((p, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < 2 ? '1px solid #f0f3ff' : 'none' }}>
-                                <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg, #016472, #2e7d8c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>{p.avatar}</div>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: '#111c2d' }}>{p.name}</p>
-                                    <p style={{ margin: 0, fontSize: 11, color: '#6f797b' }}>Dernière visite : {p.last}</p>
-                                </div>
-                                <button style={{ background: '#f0f3ff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: '#016472', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Voir</button>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Revenus du mois */}
-                    <div style={{ background: 'linear-gradient(135deg, #E8613A, #E8913A)', borderRadius: 16, padding: 22, color: 'white' }}>
-                        <p style={{ margin: '0 0 6px', fontSize: 13, opacity: 0.85 }}>💰 Revenus ce mois</p>
-                        <p style={{ margin: '0 0 4px', fontSize: 32, fontWeight: 800 }}>470 000 XAF</p>
-                        <p style={{ margin: 0, fontSize: 13, opacity: 0.8 }}>47 consultations × moy. 10 000 XAF</p>
-                        <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 600 }}>
-                            📈 +12% vs mois dernier
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+const DS = {
+  primary:'#016472', secondary:'#E8613A', surface:'#ffffff',
+  surfaceLow:'#f0f3ff', surfaceContainer:'#e7eeff',
+  onSurface:'#111c2d', outline:'#6f797b', outlineVariant:'#bec8cb',
 };
 
-export default DoctorHome;
+export default function DoctorHome() {
+  const navigate  = useNavigate();
+  const { user }  = useSelector(s => s.auth);
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [acting,  setActing]  = useState(null);
+
+  const hour     = new Date().getHours();
+  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [apptRes, notifRes, patientsRes] = await Promise.all([
+          api.get('/doctor/appointments'),
+          api.get('/doctor/notifications'),
+          api.get('/doctor/patients'),
+        ]);
+        setData({
+          appointments: apptRes.data,
+          notifications: notifRes.data,
+          patients: patientsRes.data,
+        });
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const todayRdv    = data?.appointments?.filter(a => {
+    const d = new Date(a.scheduled_at);
+    const t = new Date();
+    return d.getDate()===t.getDate() && d.getMonth()===t.getMonth() && d.getFullYear()===t.getFullYear();
+  }) || [];
+  const pending     = data?.notifications || [];
+  const completed   = data?.appointments?.filter(a => a.status === 'completed').length || 0;
+  const revenue     = (data?.appointments?.filter(a => a.is_paid) || [])
+    .reduce((sum, a) => sum + (parseFloat(a.fee_raw || a.fee) || 0), 0);
+
+  const handleAccept = async (notif) => {
+    setActing(notif.appointment_id);
+    try {
+      const res = await api.post(`/doctor/consultations/${notif.appointment_id}/accept`);
+      setData(prev => ({ ...prev, notifications: prev.notifications.filter(n => n.appointment_id !== notif.appointment_id) }));
+      if (notif.type === 'video') {
+        navigate(`/consultation/room/${notif.appointment_id}`, {
+          state: { channel: res.data.channel, token: res.data.token, appId: res.data.app_id, role:'doctor' }
+        });
+      } else {
+        navigate(`/consultation/chat/${notif.appointment_id}`);
+      }
+    } catch (e) { console.error(e); }
+    finally { setActing(null); }
+  };
+
+  const handleReject = async (id) => {
+    setActing('r'+id);
+    try {
+      await api.post(`/doctor/consultations/${id}/reject`);
+      setData(prev => ({ ...prev, notifications: prev.notifications.filter(n => n.appointment_id !== id) }));
+    } catch (e) { console.error(e); }
+    finally { setActing(null); }
+  };
+
+  const getInitials = (name) => {
+    const p = (name||'').split(' ');
+    return (p[0]?.[0]||'') + (p[1]?.[0]||'');
+  };
+
+  return (
+    <div style={{ fontFamily:"'Inter',sans-serif", display:'flex', flexDirection:'column', gap:'clamp(16px,3vw,24px)' }}>
+
+      {/* Bannière */}
+      <div style={{ background:`linear-gradient(135deg,#0a3d4a 0%,${DS.primary} 100%)`, borderRadius:16, padding:'clamp(20px,4vw,28px)', color:'#fff', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', right:-40, top:-40, width:200, height:200, background:'rgba(232,97,58,0.12)', borderRadius:'50%', pointerEvents:'none' }} />
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16, position:'relative', zIndex:1 }}>
+          <div>
+            <p style={{ margin:'0 0 4px', opacity:0.8, fontSize:14 }}>{greeting} 👋</p>
+            <h2 style={{ margin:'0 0 8px', fontSize:'clamp(18px,3vw,24px)', fontWeight:700 }}>Dr. {user?.name}</h2>
+            <p style={{ margin:0, opacity:0.8, fontSize:13 }}>
+              {todayRdv.length} rendez-vous aujourd'hui · {pending.length} demande{pending.length>1?'s':''} en attente
+            </p>
+          </div>
+          <button onClick={() => navigate('/doctor/agenda')}
+            style={{ background:`linear-gradient(90deg,${DS.secondary},#E8913A)`, padding:'11px 20px', borderRadius:10, color:'#fff', border:'none', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+            Voir l'agenda →
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))', gap:'clamp(10px,2vw,16px)' }}>
+        {[
+          { val: todayRdv.length,              label:"RDV aujourd'hui",       color: DS.primary,   icon:'📅' },
+          { val: data?.patients?.length || 0,  label:'Patients',              color: DS.secondary, icon:'👥' },
+          { val: completed,                    label:'Consultations total',   color:'#16a34a',     icon:'✅' },
+          { val: revenue > 0 ? (revenue/1000).toFixed(0)+'K' : '0', label:'Revenus XAF', color:'#7c3aed', icon:'💰' },
+        ].map((s,i) => (
+          <div key={i} style={{ background: DS.surface, borderRadius:12, padding:'clamp(14px,3vw,20px)', border:`1px solid ${DS.outlineVariant}`, display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ width:44, height:44, borderRadius:12, background: DS.surfaceLow, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>
+              {s.icon}
+            </div>
+            <div>
+              <p style={{ fontSize:22, fontWeight:700, color: s.color, margin:0, lineHeight:1.2 }}>{loading ? '—' : s.val}</p>
+              <p style={{ fontSize:12, color: DS.outline, margin:0 }}>{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'clamp(12px,2vw,20px)' }}>
+
+        {/* Demandes en attente */}
+        {pending.length > 0 && (
+          <div style={{ background: DS.surface, borderRadius:12, padding:'clamp(16px,3vw,22px)', border:`2px solid #fde047` }}>
+            <h3 style={{ fontSize:15, fontWeight:700, color: DS.onSurface, margin:'0 0 14px', display:'flex', alignItems:'center', gap:8 }}>
+              🔔 Demandes en attente
+              <span style={{ background: DS.secondary, color:'#fff', borderRadius:999, fontSize:11, padding:'2px 8px' }}>{pending.length}</span>
+            </h3>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {pending.map((notif,i) => (
+                <div key={i} style={{ background: DS.surfaceLow, borderRadius:10, padding:'12px 14px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                    <div style={{ width:36, height:36, borderRadius:'50%', background:`linear-gradient(135deg,${DS.primary},#2e7d8c)`, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:14, flexShrink:0 }}>
+                      {getInitials(notif.patient_name).toUpperCase()}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <p style={{ fontSize:13, fontWeight:600, color: DS.onSurface, margin:'0 0 2px' }}>{notif.patient_name}</p>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        {notif.type==='video' ? <Video size={12} color={DS.primary}/> : <MessageSquare size={12} color="#884b00"/>}
+                        <span style={{ fontSize:11, color: DS.outline }}>{notif.type==='video' ? 'Vidéo' : 'Message'} · {notif.fee?.toLocaleString?.() || notif.fee} XAF</span>
+                      </div>
+                    </div>
+                  </div>
+                  {notif.reason && (
+                    <p style={{ fontSize:12, color: DS.outline, background: DS.surface, borderRadius:6, padding:'6px 10px', margin:'0 0 10px' }}>
+                      📝 {notif.reason}
+                    </p>
+                  )}
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={() => handleAccept(notif)} disabled={!!acting}
+                      style={{ flex:1, padding:'8px', background: DS.primary, color:'#fff', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:4, opacity: acting===notif.appointment_id ? 0.7 : 1 }}>
+                      <Check size={13}/> Accepter
+                    </button>
+                    <button onClick={() => handleReject(notif.appointment_id)} disabled={!!acting}
+                      style={{ flex:1, padding:'8px', background:'#ffdad6', color:'#ba1a1a', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+                      <X size={13}/> Refuser
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Agenda du jour */}
+        <div style={{ background: DS.surface, borderRadius:12, padding:'clamp(16px,3vw,22px)', border:`1px solid ${DS.outlineVariant}` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <h3 style={{ fontSize:15, fontWeight:700, color: DS.onSurface, margin:0 }}>📅 Agenda du jour</h3>
+            <button onClick={() => navigate('/doctor/agenda')}
+              style={{ fontSize:12, color: DS.primary, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+              Voir tout <ArrowRight size={13}/>
+            </button>
+          </div>
+          {loading ? <p style={{ color: DS.outline, fontSize:13 }}>Chargement...</p>
+          : todayRdv.length === 0 ? (
+            <p style={{ color: DS.outline, fontSize:13, textAlign:'center', padding:'20px 0' }}>Aucun rendez-vous aujourd'hui</p>
+          ) : todayRdv.slice(0,4).map((rdv,i) => (
+            <div key={rdv.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom: i<Math.min(todayRdv.length,4)-1 ? `1px solid ${DS.outlineVariant}` : 'none' }}>
+              <div style={{ minWidth:50, textAlign:'center', background: DS.surfaceLow, borderRadius:8, padding:'6px 4px' }}>
+                <p style={{ fontSize:13, fontWeight:700, color: DS.primary, margin:0 }}>{rdv.scheduled_at?.slice(-5) || '--:--'}</p>
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ margin:'0 0 2px', fontWeight:600, fontSize:13, color: DS.onSurface, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {rdv.patient?.name || 'Patient'}
+                </p>
+                <p style={{ margin:0, fontSize:12, color: DS.outline }}>{rdv.reason || 'Consultation'}</p>
+              </div>
+              <span style={{ fontSize:11, padding:'3px 8px', borderRadius:999, background: rdv.status==='confirmed' ? '#e1f5ee' : '#fff8e7', color: rdv.status==='confirmed' ? DS.primary : '#884b00', fontWeight:600, flexShrink:0 }}>
+                {rdv.status==='confirmed' ? 'Confirmé' : 'En attente'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Patients récents */}
+        <div style={{ background: DS.surface, borderRadius:12, padding:'clamp(16px,3vw,22px)', border:`1px solid ${DS.outlineVariant}` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <h3 style={{ fontSize:15, fontWeight:700, color: DS.onSurface, margin:0 }}>👥 Patients récents</h3>
+            <button onClick={() => navigate('/doctor/patients')}
+              style={{ fontSize:12, color: DS.primary, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+              Voir tout <ArrowRight size={13}/>
+            </button>
+          </div>
+          {loading ? <p style={{ color: DS.outline, fontSize:13 }}>Chargement...</p>
+          : (data?.patients||[]).length === 0 ? (
+            <p style={{ color: DS.outline, fontSize:13, textAlign:'center', padding:'20px 0' }}>Aucun patient encore</p>
+          ) : (data.patients||[]).slice(0,4).map((p,i) => (
+            <div key={p.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom: i<Math.min(data.patients.length,4)-1 ? `1px solid ${DS.outlineVariant}` : 'none' }}>
+              <div style={{ width:36, height:36, borderRadius:'50%', background:`linear-gradient(135deg,${DS.primary},#2e7d8c)`, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:13, flexShrink:0 }}>
+                {getInitials(p.name).toUpperCase()}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ margin:0, fontWeight:600, fontSize:13, color: DS.onSurface, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name}</p>
+                <p style={{ margin:0, fontSize:12, color: DS.outline }}>{p.consultations_count} consultation{p.consultations_count>1?'s':''}</p>
+              </div>
+              {p.last_visit && <span style={{ fontSize:11, color: DS.outline, flexShrink:0 }}>{p.last_visit}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

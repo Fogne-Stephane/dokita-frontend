@@ -37,9 +37,12 @@ export default function PatientPayments() {
     })();
   }, []);
 
-  const total = payments
+const total = payments
     .filter(p => p.status === 'completed')
-    .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    .reduce((sum, p) => {
+        const amount = parseFloat(String(p.amount).replace(/[^0-9.]/g, '')) || 0;
+        return sum + amount;
+    }, 0);
 
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:300, fontFamily:'Inter,sans-serif' }}>
@@ -61,8 +64,7 @@ export default function PatientPayments() {
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:24 }}>
         {[
-          { label:'Total dépensé',     value: total.toLocaleString() + ' XAF', icon:'💰', color:'#016472' },
-          { label:'Consultations',     value: payments.filter(p=>p.status==='completed').length, icon:'✅', color:'#016472' },
+{ label:'Total dépensé', value: total.toLocaleString('fr') + ' XAF', icon:'💰', color: DS.primary },          { label:'Consultations',     value: payments.filter(p=>p.status==='completed').length, icon:'✅', color:'#016472' },
           { label:'En attente',        value: payments.filter(p=>p.status==='pending').length,   icon:'⏳', color:'#884b00' },
         ].map((s,i) => (
           <div key={i} style={{ background: DS.surface, borderRadius:12, padding:'16px', border:`1px solid ${DS.outlineVariant}` }}>

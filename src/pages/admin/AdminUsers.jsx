@@ -1,109 +1,105 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../../api/axios';
 
-const USERS = [
-    { id: 1, name: 'M. Talla Jean',     email: 'talla@test.com',   role: 'patient', status: 'active',   joined: '01 Jun 2026' },
-    { id: 2, name: 'Mme Eboa Claire',   email: 'eboa@test.com',    role: 'patient', status: 'active',   joined: '03 Jun 2026' },
-    { id: 3, name: 'Dr. Kamga Pierre',  email: 'kamga@test.com',   role: 'doctor',  status: 'active',   joined: '15 Mai 2026' },
-    { id: 4, name: 'Dr. Mballa Sophie', email: 'mballa@test.com',  role: 'doctor',  status: 'pending',  joined: '08 Jun 2026' },
-    { id: 5, name: 'M. Biya Paul',      email: 'biya@test.com',    role: 'patient', status: 'blocked',  joined: '20 Avr 2026' },
-    { id: 6, name: 'Mme Ngo Marie',     email: 'ngo@test.com',     role: 'patient', status: 'active',   joined: '10 Jun 2026' },
-];
-
-const STATUS_CONFIG = {
-    active:  { label: 'Actif',       bg: '#dcfce7', color: '#16a34a' },
-    pending: { label: 'En attente',  bg: '#fef9c3', color: '#ca8a04' },
-    blocked: { label: 'Bloqué',      bg: '#fee2e2', color: '#dc2626' },
+const DS = {
+  primary:'#016472', secondary:'#E8613A', surface:'#ffffff',
+  surfaceLow:'#f0f3ff', surfaceContainer:'#e7eeff',
+  onSurface:'#111c2d', outline:'#6f797b', outlineVariant:'#bec8cb',
 };
 
-const AdminUsers = () => {
-    const [search, setSearch] = useState('');
-    const [roleFilter, setRoleFilter] = useState('Tous');
-    const [users, setUsers] = useState(USERS);
+export default function AdminUsers() {
+  const [users,  setUsers]  = useState([]);
+  const [loading,setLoading]= useState(true);
+  const [search, setSearch] = useState('');
+  const [role,   setRole]   = useState('Tous');
+  const [acting, setActing] = useState(null);
 
-    const filtered = users.filter(u => {
-        const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-        const matchRole = roleFilter === 'Tous' || u.role === roleFilter.toLowerCase();
-        return matchSearch && matchRole;
-    });
+  useEffect(() => {
+    api.get('/admin/users')
+      .then(res => setUsers(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
-    const toggleBlock = (id) => {
-        setUsers(prev => prev.map(u => u.id === id ? { ...u, status: u.status === 'blocked' ? 'active' : 'blocked' } : u));
-    };
+  const handleToggleBlock = async (u) => {
+    setActing(u.id);
+    try {
+      await api.post(`/admin/users/${u.id}/toggle-block`);
+      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_active: !x.is_active } : x));
+    } catch (e) { console.error(e); }
+    finally { setActing(null); }
+  };
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontFamily: "'Inter', sans-serif" }}>
-            <div>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#111c2d' }}>Gestion Utilisateurs</h2>
-                <p style={{ margin: 0, fontSize: 13, color: '#6f797b' }}>{users.length} utilisateurs enregistrés</p>
-            </div>
+  const filtered = users.filter(u => {
+    const matchS = u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase());
+    const matchR = role === 'Tous' || u.role === role.toLowerCase();
+    return matchS && matchR;
+  });
 
-            {/* Filtres */}
-            <div style={{ background: 'white', borderRadius: 14, padding: 18, border: '1px solid #e7eeff', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                <input placeholder="🔍  Rechercher..."
-                    value={search} onChange={e => setSearch(e.target.value)}
-                    style={{ flex: 1, minWidth: 200, border: '1.5px solid #dde3f0', borderRadius: 10, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
-                />
-                {['Tous', 'Patient', 'Doctor'].map(r => (
-                    <button key={r} onClick={() => setRoleFilter(r)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, background: roleFilter === r ? '#111c2d' : '#f0f3ff', color: roleFilter === r ? 'white' : '#6f797b', transition: 'all 0.2s' }}>
-                        {r === 'Doctor' ? 'Médecins' : r}
-                    </button>
-                ))}
-            </div>
+  if (loading) return <p style={{ fontFamily:"'Inter',sans-serif", color:'#6f797b', textAlign:'center', padding:40 }}>Chargement...</p>;
 
-            {/* Table */}
-            <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e7eeff', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ background: '#f9f9ff', borderBottom: '1px solid #e7eeff' }}>
-                            {['Utilisateur', 'Email', 'Rôle', 'Inscription', 'Statut', 'Actions'].map(h => (
-                                <th key={h} style={{ padding: '14px 18px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#6f797b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filtered.map((u, i) => {
-                            const st = STATUS_CONFIG[u.status];
-                            return (
-                                <tr key={u.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f0f3ff' : 'none', transition: 'background 0.15s' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = '#f9f9ff'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'white'}
-                                >
-                                    <td style={{ padding: '14px 18px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: u.role === 'doctor' ? 'linear-gradient(135deg, #E8613A, #E8913A)' : 'linear-gradient(135deg, #016472, #2e7d8c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
-                                                {u.name.split(' ').pop()[0]}
-                                            </div>
-                                            <span style={{ fontWeight: 600, fontSize: 14, color: '#111c2d' }}>{u.name}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: '14px 18px', fontSize: 13, color: '#6f797b' }}>{u.email}</td>
-                                    <td style={{ padding: '14px 18px' }}>
-                                        <span style={{ background: u.role === 'doctor' ? '#fff4f0' : '#e7eeff', color: u.role === 'doctor' ? '#E8613A' : '#016472', padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                                            {u.role === 'doctor' ? '👨‍⚕️ Médecin' : '🧑 Patient'}
-                                        </span>
-                                    </td>
-                                    <td style={{ padding: '14px 18px', fontSize: 13, color: '#6f797b' }}>{u.joined}</td>
-                                    <td style={{ padding: '14px 18px' }}>
-                                        <span style={{ background: st.bg, color: st.color, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>{st.label}</span>
-                                    </td>
-                                    <td style={{ padding: '14px 18px' }}>
-                                        <div style={{ display: 'flex', gap: 8 }}>
-                                            <button style={{ background: '#f0f3ff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: '#016472', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                                👁️ Voir
-                                            </button>
-                                            <button onClick={() => toggleBlock(u.id)} style={{ background: u.status === 'blocked' ? '#dcfce7' : '#fee2e2', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: u.status === 'blocked' ? '#16a34a' : '#dc2626', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                                {u.status === 'blocked' ? '✅ Débloquer' : '🚫 Bloquer'}
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
+  return (
+    <div style={{ fontFamily:"'Inter',sans-serif", display:'flex', flexDirection:'column', gap:20 }}>
+      <div>
+        <h1 style={{ fontSize:'clamp(18px,3vw,24px)', fontWeight:700, color: DS.onSurface, margin:'0 0 4px' }}>Gestion Utilisateurs</h1>
+        <p style={{ fontSize:14, color: DS.outline, margin:0 }}>{users.length} utilisateurs enregistrés</p>
+      </div>
 
-export default AdminUsers;
+      {/* Filtres */}
+      <div style={{ background: DS.surface, borderRadius:12, padding:'14px 18px', border:`1px solid ${DS.outlineVariant}`, display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
+        <input placeholder="🔍 Rechercher..." value={search} onChange={e => setSearch(e.target.value)}
+          style={{ flex:1, minWidth:180, border:`1.5px solid ${DS.outlineVariant}`, borderRadius:8, padding:'9px 14px', fontSize:14, fontFamily:'inherit', outline:'none' }} />
+        {['Tous','Patient','Doctor'].map(r => (
+          <button key={r} onClick={() => setRole(r)}
+            style={{ padding:'9px 16px', borderRadius:8, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600, background: role===r ? DS.primary : DS.surfaceLow, color: role===r ? '#fff' : DS.outline, transition:'all .2s' }}>
+            {r === 'Doctor' ? 'Médecins' : r}
+          </button>
+        ))}
+      </div>
+
+      {/* Table responsive */}
+      <div style={{ background: DS.surface, borderRadius:12, border:`1px solid ${DS.outlineVariant}`, overflow:'auto' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', minWidth:600 }}>
+          <thead>
+            <tr style={{ background: DS.surfaceLow }}>
+              {['Utilisateur','Email','Rôle','Statut','Actions'].map(h => (
+                <th key={h} style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:700, color: DS.outline, textTransform:'uppercase', letterSpacing:'0.06em', borderBottom:`1px solid ${DS.outlineVariant}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((u, i) => (
+              <tr key={u.id} style={{ borderBottom: i<filtered.length-1 ? `1px solid ${DS.outlineVariant}` : 'none' }}>
+                <td style={{ padding:'12px 16px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <div style={{ width:34, height:34, borderRadius:'50%', background: u.role==='doctor' ? `linear-gradient(135deg,${DS.secondary},#E8913A)` : `linear-gradient(135deg,${DS.primary},#2e7d8c)`, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:13, flexShrink:0 }}>
+                      {u.name?.[0]?.toUpperCase()}
+                    </div>
+                    <span style={{ fontWeight:600, fontSize:14, color: DS.onSurface }}>{u.name}</span>
+                  </div>
+                </td>
+                <td style={{ padding:'12px 16px', fontSize:13, color: DS.outline }}>{u.email}</td>
+                <td style={{ padding:'12px 16px' }}>
+                  <span style={{ background: u.role==='doctor' ? '#fff4f0' : DS.surfaceContainer, color: u.role==='doctor' ? DS.secondary : DS.primary, padding:'3px 10px', borderRadius:999, fontSize:12, fontWeight:600 }}>
+                    {u.role==='doctor' ? '👨‍⚕️ Médecin' : '🧑 Patient'}
+                  </span>
+                </td>
+                <td style={{ padding:'12px 16px' }}>
+                  <span style={{ background: u.is_active ? '#e1f5ee' : '#ffdad6', color: u.is_active ? DS.primary : '#ba1a1a', padding:'3px 10px', borderRadius:999, fontSize:12, fontWeight:600 }}>
+                    {u.is_active ? 'Actif' : 'Bloqué'}
+                  </span>
+                </td>
+                <td style={{ padding:'12px 16px' }}>
+                  <button onClick={() => handleToggleBlock(u)} disabled={acting===u.id}
+                    style={{ background: u.is_active ? '#ffdad6' : '#e1f5ee', border:'none', borderRadius:8, padding:'6px 14px', fontSize:12, color: u.is_active ? '#ba1a1a' : DS.primary, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: acting===u.id ? 0.6 : 1 }}>
+                    {u.is_active ? '🚫 Bloquer' : '✅ Débloquer'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

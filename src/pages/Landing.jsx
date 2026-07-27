@@ -59,12 +59,16 @@ const Landing = () => {
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
                     <img src={logo} alt="Dokita" style={{ height: 40, width: 'auto' }} />
                 </Link>
-                <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-                    <button onClick={() => scrollTo('features')} style={navLinkStyle}>Fonctionnalités</button>
-                    <button onClick={() => scrollTo('how')} style={navLinkStyle}>Comment ça marche</button>
-                    <Link to="/login" style={btnOutlineStyle}>Se connecter</Link>
-                    <Link to="/register" style={btnAccentStyle}>S'inscrire</Link>
-                </nav>
+<nav style={{ display:'flex', gap:'clamp(8px,2vw,28px)', alignItems:'center' }}>
+    <button onClick={() => scrollTo('features')} 
+        style={{ ...navLinkStyle, display:'none' }}
+        className="hide-mobile">Fonctionnalités</button>
+    <button onClick={() => scrollTo('how')} 
+        style={{ ...navLinkStyle, display:'none' }}
+        className="hide-mobile">Comment ça marche</button>
+    <Link to="/login" style={{ ...btnOutlineStyle, padding:'8px 14px', fontSize:13 }}>Connexion</Link>
+    <Link to="/register" style={{ ...btnAccentStyle, padding:'8px 14px', fontSize:13 }}>S'inscrire</Link>
+</nav>
             </header>
 
             <main style={{ paddingTop: 60 }}>
@@ -72,7 +76,7 @@ const Landing = () => {
                 {/* ── HERO ── */}
                 <section style={{ background: 'linear-gradient(135deg, #016472 0%, #004e5a 100%)', padding: '80px 32px', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ position: 'absolute', top: -80, right: -80, width: 320, height: 320, background: '#E8613A', borderRadius: '50%', filter: 'blur(80px)', opacity: 0.15 }} />
-                    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+                    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 48, alignItems: 'center' }}>
                         {/* Texte */}
                         <div style={{ color: 'white' }}>
                             <span style={{ display: 'inline-block', background: '#ab3511', padding: '4px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>
@@ -162,7 +166,7 @@ const Landing = () => {
                             <p style={{ color: '#3f484b', marginTop: 12, fontSize: 16 }}>Tout ce dont vous avez besoin en un seul endroit.</p>
                         </div>
                     </SlideSection>
-                    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+                    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid',gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
                         {[
                             { icon: '🎥', title: 'Téléconsultation', desc: 'Consultez par vidéo sans vous déplacer. Évitez les embouteillages de Douala.' },
                             { icon: '📋', title: 'Ordonnances numériques', desc: 'Recevez vos ordonnances sur mobile, acceptées dans toutes les pharmacies partenaires.' },
@@ -220,7 +224,7 @@ const Landing = () => {
                     <SlideSection>
                         <h3 style={{ fontSize: 32, fontWeight: 800, color: '#016472', textAlign: 'center', marginBottom: 40, letterSpacing: '-0.02em' }}>Ce que disent nos patients</h3>
                     </SlideSection>
-                    <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                    <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
                         {[
                             { name: 'Mme Eboa', city: 'Douala', text: '"Grâce à Dokita, j\'ai pu consulter un pédiatre pour mon fils en pleine nuit sans affronter les urgences. Le médecin était très à l\'écoute et rassurant."' },
                             { name: 'M. Talla', city: 'Yaoundé', text: '"Le service Dokita AI m\'a aidé à comprendre mes symptômes avant ma consultation. C\'est un outil révolutionnaire pour nous ici à Yaoundé."' },

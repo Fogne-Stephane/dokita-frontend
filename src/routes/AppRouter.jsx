@@ -19,7 +19,7 @@ import PatientProfile from '../pages/patient/PatientProfile';
 import PatientPayments from '../pages/patient/PatientPayments';
 import PaymentTunnel from '../pages/patient/PaymentTunnel';
 import WaitingRoom from '../pages/patient/WaitingRoom';
-import DoctorProfile from '../pages/patient/DoctorProfile';
+import DoctorProfilePatient from '../pages/patient/DoctorProfile';
 // Doctor
 import DoctorLayout from '../components/layout/DoctorLayout';
 import DoctorHome from '../pages/doctor/DoctorHome';
@@ -27,7 +27,8 @@ import DoctorAgenda from '../pages/doctor/DoctorAgenda';
 import DoctorPatients from '../pages/doctor/DoctorPatients';
 import DoctorPrescriptions from '../pages/doctor/DoctorPrescriptions';
 import DoctorMessages from '../pages/doctor/DoctorMessages';
-import DoctorProfile2 from '../pages/doctor/DoctorProfile';
+import DoctorPayments from '../pages/doctor/DoctorPayments';
+import DoctorProfilePage from '../pages/doctor/DoctorProfile';
 
 
 // Admin
@@ -39,6 +40,12 @@ import AdminDoctors from '../pages/admin/AdminDoctors';
 import AdminHealthCenters from '../pages/admin/AdminHealthCenters';
 import AdminPayments from '../pages/admin/AdminPayments';
 import AdminSettings from '../pages/admin/AdminSettings';
+
+import VideoRoom            from '../pages/consultation/VideoRoom';
+import ConsultationChat     from '../pages/consultation/ConsultationChat';
+import ConsultationSummary  from '../pages/consultation/ConsultationSummary';
+import PatientRdv           from '../pages/patient/PatientRdv';
+import PatientConsultations from '../pages/patient/PatientConsultations';
 
 
 
@@ -57,6 +64,13 @@ const AppRouter = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
 
+            {/* video appel */}
+            <Route path="/consultation/room/:appointmentId"    element={<PrivateRoute><VideoRoom /></PrivateRoute>} />
+            <Route path="/consultation/chat/:appointmentId"    element={<PrivateRoute><ConsultationChat /></PrivateRoute>} />
+            <Route path="/consultation/summary/:appointmentId" element={<PrivateRoute><ConsultationSummary /></PrivateRoute>} />
+            <Route path="/consultation/waiting/:appointmentId" element={<PrivateRoute><WaitingRoom /></PrivateRoute>} />
+            <Route path="/patient/rdv"           element={<PrivateRoute><PatientLayout><PatientRdv /></PatientLayout></PrivateRoute>} />
+            <Route path="/patient/consultations" element={<PrivateRoute><PatientLayout><PatientConsultations /></PatientLayout></PrivateRoute>} />
             {/* Patient */}
             <Route path="/patient/dashboard"      element={<PrivateRoute><PatientLayout><PatientHome /></PatientLayout></PrivateRoute>} />
             <Route path="/patient/appointments"   element={<PrivateRoute><PatientLayout><PatientAppointments /></PatientLayout></PrivateRoute>} />
@@ -70,7 +84,7 @@ const AppRouter = () => (
         <PatientLayout><PaymentTunnel /></PatientLayout>
     </PrivateRoute>
 } />
-            <Route path="/patient/doctors/:id" element={<PrivateRoute><PatientLayout><DoctorProfile /></PatientLayout></PrivateRoute>
+            <Route path="/patient/doctors/:id" element={<PrivateRoute><PatientLayout><DoctorProfilePatient /></PatientLayout></PrivateRoute>
 } />
             <Route path="/patient/payments" element={
     <PrivateRoute><PatientLayout><PatientPayments /></PatientLayout></PrivateRoute>
@@ -80,9 +94,11 @@ const AppRouter = () => (
             <Route path="/doctor/dashboard"     element={<PrivateRoute><DoctorLayout><DoctorHome /></DoctorLayout></PrivateRoute>} />
             <Route path="/doctor/agenda"        element={<PrivateRoute><DoctorLayout><DoctorAgenda /></DoctorLayout></PrivateRoute>} />
             <Route path="/doctor/patients"      element={<PrivateRoute><DoctorLayout><DoctorPatients /></DoctorLayout></PrivateRoute>} />
+            <Route path="/doctor/payments" element={
+  <PrivateRoute><DoctorLayout><DoctorPayments /></DoctorLayout></PrivateRoute>
+} />
             <Route path="/doctor/prescriptions" element={<PrivateRoute><DoctorLayout><DoctorPrescriptions /></DoctorLayout></PrivateRoute>} />
-            <Route path="/doctor/messages"      element={<PrivateRoute><DoctorLayout><DoctorMessages /></DoctorLayout></PrivateRoute>} />
-            <Route path="/doctor/profile"       element={<PrivateRoute><DoctorLayout><DoctorProfile /></DoctorLayout></PrivateRoute>} />
+            <Route path="/doctor/profile"       element={<PrivateRoute><DoctorLayout><DoctorProfilePage /></DoctorLayout></PrivateRoute>} />
 
             {/* Admin */}
             <Route path="/admin/dashboard"      element={<PrivateRoute><AdminLayout><AdminHome /></AdminLayout></PrivateRoute>} />
